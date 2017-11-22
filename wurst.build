@@ -1,4 +1,7 @@
 !!file.WurstProjectConfig
-dependencies: ['https://github.com/wurstscript/wurstStdlib2']
+dependencies: ['https://github.com/wurstscript/wurstStdlib2', 'https://github.com/IgorSamurovic/wurstlibs']
 projectName: HT
 releaseName: myRelease.w3x
+buildMapName: Built Map
+buildMapFileName: test
+buildMapAuthor: Me

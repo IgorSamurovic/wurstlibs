@@ -1,0 +1,72 @@
+package StringTemplate
+import HashMap
+import LinkedList
+constant COLOR_MAP = new ColorMap()
+
+public class ColorMap extends HashMap<string, string>
+    function put(string name, color rgb)
+        super.put(name, rgb.toColorString())
+
+    function put(string name, int r, int g, int b)
+        put(name, color(r, g, b))
+
+    override function put(string name, string colorString)
+        super.put(name, "|cff" + colorString)
+
+    function initialize()
+        put("em"    , "ffcc00") // Golden highlights on tooltips
+        put("ac"    , "c3dbff") // Autocast blue color
+        put("f"     , "fed312") // Top button menu
+
+        for id=0 to 11
+            put("p" + id.toString(), playercolors[id])
+
+    construct()
+        super()
+        initialize()
+
+
+public function string.getAllTags() returns LinkedList<string>
+    let list   = new LinkedList<string>()
+    var starts = new LinkedList<int>()
+
+    var index = 0
+    int endIndex
+    var lastChar = ""
+
+    for char in this
+        if char == "<" and lastChar != "\\"
+            starts.add(index)
+        if char == ">" and lastChar != "\\"
+            endIndex = index
+            list.add(this.substring(starts.pop(), endIndex + 1))
+        lastChar = char
+        index++
+
+    destroy starts
+    return list
+
+public function string.getAllColors() returns LinkedList<string>
+    let allTags = this.getAllTags()
+    let colors = new LinkedList<string>
+    for tag in allTags
+        if tag.startsWith("<c ")
+            colors.add(tag.substring(3, tag.length() - 1))
+    
+    destroy allTags
+    return colors
+
+public function string.colorizeBy(ColorMap map) returns string
+    var replaced = this
+    let colorNames = this.getAllColors()
+    for colorName in colorNames
+        replaced = replaced.replace("<c " + colorName + ">", map.get(colorName))
+    replaced = replaced.replace("</c>", "|r")
+    destroy colorNames
+    return replaced
+
+public function string.colorize() returns string
+    return this.colorizeBy(COLOR_MAP)
+
+public function string.r(string key, string value) returns string
+    return this.replace("{" + key + "}", value)
