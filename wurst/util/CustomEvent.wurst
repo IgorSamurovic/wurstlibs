@@ -1,0 +1,26 @@
+package CustomEvent
+import HashMap
+import LinkedList
+
+public class CustomEvent
+    private trigger trig
+    private let triggersToRun = new LinkedList<trigger>()
+
+    static let map = new HashMap<trigger, CustomEvent>()
+
+    static function action()
+        CustomEvent ce = map.get(GetTriggeringTrigger())
+        for t in ce.triggersToRun
+            if t.evaluate()
+                t.execute()
+
+    construct()
+        this.trig = CreateTrigger()
+        this.trig.addAction(function action)
+        map.put(this.trig, this)
+
+    function register(trigger newTrig)
+        triggersToRun.add(newTrig)
+
+    function fire()
+        this.trig.execute()

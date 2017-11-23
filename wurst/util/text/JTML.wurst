@@ -1,4 +1,4 @@
-package StringTemplate
+package JTML
 import IterableMap
 import LinkedList
 import StringUtils 
@@ -12,86 +12,10 @@ constant CLOSING_TAG      = "/"
 constant VALUE_ASSOCIATOR = "="
 constant QUOTATION_MARK   = "\""
 
-public constant TAG_REGISTRY = new TagRegistry()
-public ColorSet COLOR_SET 
-
-constant DOM = new TagTemplate("DOM", false, (Element e) -> e.text)
-
-function initialization()
-    COLOR_SET = new ColorSet("default") 
-    ..add("em"    , "ffcc00") // Golden highlights on tooltips
-    ..add("ac"    , "c3dbff") // Autocast blue color
-    ..add("f"     , "fed312") // Top button menu
-
-    for i=0 to 11
-        COLOR_SET.add("p" + i.toString(), playercolors[i])
-
-    ColorSet.selectedSet = COLOR_SET
-
-    new ColorSet("human")
-    ..add("em"    , 0, 0, 255)
-
-    TAG_REGISTRY
-    ..add("br", true, (Element e) -> "|n")
-    ..add("upper", false, (Element e) -> e.text.toUpperCase())
-    ..add("lower", false, (Element e) -> e.text.toLowerCase())
-    ..add("c", false, (Element e) -> ColorSet.find(e.attr.staticItr().next()) + e.text + "|r")
-    ..add("spaceout", false, (Element e) -> begin
-        string val = ""
-        var num = e.attr.get("num").toInt()
-        if num == 0
-            num = 1
-        var addon = ""
-        for i=1 to num
-            addon += " "
-        for char in e.text
-            val += char + addon
-        return val
-    end)
-init
-    doAfter(0.2, ()->  initialization())
-
-public class ColorSet
-    protected static let colorSets = new HashMap<string, ColorSet>() 
-    protected let map = new HashMap<string, string>()
-    protected static ColorSet selectedSet
-
-    static function find(string colorName) returns string
-        print("looking for: " + colorName)
-        if not selectedSet.map.has(colorName)
-            if COLOR_SET.map.has(colorName)
-                 return COLOR_SET.map.get(colorName) 
-            else
-                let splitList = colorName.split(":")
-                let prefix = splitList.get(0).trim()
-                let color = splitList.get(1).trim()
-                destroy splitList
-
-                let colorSet = colorSets.get(prefix)
-                if colorSet != null
-                    let foundColor = colorSet.map.get(color)
-                    if foundColor != null
-                        return colorSet.map.get(color)
-                    else
-                        return ""
-                else
-                    return ""
-        else
-            return selectedSet.map.get(colorName)
-
-    function add(string name, color rgb)
-        map.put(name, rgb.toColorString())
-
-    function add(string name, int r, int g, int b)
-        add(name, color(r, g, b))
-
-    function add(string name, string colorString)
-        map.put(name, "|cff" + colorString)
-
-    construct(string name)
-        colorSets.put(name, this)
-
 public class TagRegistry
+    static constant let DEFAULT = new TagRegistry()
+    static constant let DOM = new TagTemplate("DOM", false, (JTMLElement e) -> e.text)
+
     let map = new HashMap<string, TagTemplate>()
 
     function findTag(string name) returns TagTemplate
@@ -100,13 +24,40 @@ public class TagRegistry
     function add(TagTemplate tagTemplate)
         map.put(tagTemplate.name, tagTemplate)
 
-    function add(string name, bool empty, ElementClosure closure)
+    function add(string name, bool empty, JTMLElementClosure closure)
         map.put(name, new TagTemplate(name, empty, closure))
 
-class Element
+    @compiletime static function initialize()
+        DEFAULT
+        ..add("br", true, (JTMLElement e) -> "|n")
+        ..add("upper", false, (JTMLElement e) -> e.text.toUpperCase())
+        ..add("lower", false, (JTMLElement e) -> e.text.toLowerCase())
+        ..add("spaceout", false, (JTMLElement e) -> begin
+            string val = ""
+            var num = e.attr.get("num").toInt()
+            if num == 0
+                num = 1
+            var addon = ""
+            for i=1 to num
+                addon += " "
+            for char in e.text
+                val += char + addon
+            return val
+        end)
+    
+init
+    TagRegistry.initialize()
+
+public class JTMLElement
     protected TagTemplate tagTemplate
     protected string text
     protected IterableMap<string, string> attr
+
+    function getText() returns string
+        return text
+
+    function getAttr() returns IterableMap<string, string>
+        return attr
 
     function process(TagRegistry tagRegistry) returns string
         text = text.process(tagRegistry)
@@ -121,15 +72,15 @@ class Element
         if attr != null
             destroy attr
 
-public interface ElementClosure
-    function run(Element e) returns string
+public interface JTMLElementClosure
+    function run(JTMLElement e) returns string
 
 public class TagTemplate
     protected string name
     protected bool empty
-    protected ElementClosure closure
+    protected JTMLElementClosure closure
 
-    construct(string name, bool empty, ElementClosure closure)
+    construct(string name, bool empty, JTMLElementClosure closure)
         this.name = name
         this.empty = empty
         this.closure = closure
@@ -164,7 +115,7 @@ class Tag
             name = first
 
         template = registry.findTag(name)
-        if template != DOM
+        if template != TagRegistry.DOM
             for str from iter
                 if str != "" and str != " "
                     if str.contains(VALUE_ASSOCIATOR)
@@ -217,7 +168,7 @@ public function string.process(TagRegistry tagRegistry) returns string
                                 endTag = newTag
                                 if startTag.name== endTag.name
                                     if endingBuffer <= 0
-                                        let elem = new Element(
+                                        let elem = new JTMLElement(
                                             startTag.template,
                                             startTag.attr,
                                             this.substring(startTag.endIndex+1, endTag.startIndex))
@@ -243,7 +194,7 @@ public function string.process(TagRegistry tagRegistry) returns string
                             if startTag == null
                                 startTag = newTag
                                 if startTag.template.empty
-                                    let elem = new Element(startTag.template, null, "")
+                                    let elem = new JTMLElement(startTag.template, null, "")
                                     processed += this.substring(newRawStringStartIndex, startTag.startIndex)
                                     processed += elem.process(tagRegistry)
                                     destroy elem
@@ -258,7 +209,7 @@ public function string.process(TagRegistry tagRegistry) returns string
                         break
     
     if startTag != null
-        let elem = new Element(startTag.template, startTag.attr, this.substring(startTag.endIndex + 1, this.length()))
+        let elem = new JTMLElement(startTag.template, startTag.attr, this.substring(startTag.endIndex + 1, this.length()))
         processed += elem.process(tagRegistry)
         newRawStringStartIndex = this.length()
         destroy startTag
@@ -268,10 +219,44 @@ public function string.process(TagRegistry tagRegistry) returns string
     return processed
 
 public function string.process() returns string
-    return this.process(TAG_REGISTRY)
+    return this.process(TagRegistry.DEFAULT)
 
 @test function test()
-    print("<c p0>H<c p1>ah</c></c>".process())
+    print("Learn ThisSpell - [<c em>Q</c>] - [<c em>Level {lvl}</c>]".r("lvl", "3").process())
 
 init
-    doAfter(0.5, ()-> test())
+    nullTimer(()-> test())
+
+public function string.r(string key, string value) returns string
+    return this.replace("{" + key + "}", value)
+
+public function string.r(string key, LinkedList<string> values, string separator) returns string
+    return this.replace("{" + key + "}", values.joinBy(separator))
+
+public function string.r(string key, LinkedList<string> values) returns string
+    return this.r(key, values, ", ")
+
+public function string.getAllTemplateFields() returns LinkedList<string>
+    let list = new LinkedList<string>
+    
+    var starts = new LinkedList<int>()
+    int endIndex
+
+    var index = 0
+    for char in this
+        if char == "{"
+            starts.add(index + 1)
+        if char == "}" and starts.getSize() > 0
+            endIndex = index
+            list.add(this.substring(starts.pop(), endIndex))
+
+        index++
+
+    destroy starts
+    return list
+
+public function string.format(IterableMap<string, string> map) returns string
+    string newString = this
+    for key in map
+        newString = newString.replace("{" + key + "}", map.get(key))
+    return newString

@@ -1,0 +1,87 @@
+package ObjectIdFactory
+import ObjectIds
+import HashMap
+
+public let UNIT_GEN = new ObjectIdFactory('xU00')
+public let HERO_GEN = new ObjectIdFactory('XU00')
+public let ITEM_GEN = new ObjectIdFactory('XI00')
+public let DEST_GEN = new ObjectIdFactory('XD00')
+public let ABIL_GEN = new ObjectIdFactory('XA00')
+public let BUFF_GEN = new ObjectIdFactory('XB00')
+public let UPGR_GEN = new ObjectIdFactory('XR00')
+
+public class ObjectIdFactory
+    private int startingId
+    private int id
+    int currentStep
+    
+    private static string charmap = "0123456789.......ABCDEFGHIJKLMNOPQRSTUVWXYZ,,,,,,abcdefghijklmnopqrstuvwxyz_"
+
+    private static int step1 = 10
+    private static int step1fix = 7
+    private static int step2 = 43
+    private static int step2fix = 6
+    private static int step3 = 75
+    private static int step3fix = 256-75
+
+    private HashMap<int, ObjectIdFactory> map
+
+    function setStartingId(int startingId)
+        string startingIdString = int2fourchar(startingId)
+        bool isCorrect = true
+        
+        if  startingIdString.length() != 4
+            isCorrect = false
+
+        if isCorrect 
+            this.startingId = startingId
+            this.id = startingId
+            this.currentStep = charmap.indexOf(startingIdString.charAt(3))
+
+            // let's roll it back by one place
+            if compiletime
+                this.currentStep--
+            this.id--
+        else
+            print("!WARNING! Invalid starting ID in ObjectIdFactory: " + int2fourchar(startingId))
+            destroy this
+
+    construct(int startingId)
+        this.setStartingId(startingId)
+
+    function getLast() returns int
+        return id
+
+    function next() returns int
+        this.id++
+        this.currentStep++
+
+        if currentStep == step1
+            currentStep += step1fix
+            id += step1fix
+        else if currentStep == step2
+            currentStep += step2fix
+            id += step2fix
+        else if currentStep == step3
+            currentStep = 0
+            id += step3fix
+
+        return id
+
+    function last() returns int
+        return id
+
+    function previewNext() returns int
+        var _id = id + 1
+        var _currentStep = this.currentStep + 1
+        if _currentStep == step1
+            _currentStep += step1fix
+            _id += step1fix
+        else if _currentStep == step2
+            _currentStep += step2fix
+            _id += step2fix
+        else if _currentStep == step3
+            _currentStep = 0
+            _id += step3fix
+
+        return _id

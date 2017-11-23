@@ -5,7 +5,6 @@ import Wurstunit
 
 import public TypeCasting
 import public Table
-vec2 hax = vec2(2, 6)
 
 /** Generic Table Wrapper */
 public class IterableMap<K,V> extends HashMap<K, V>
@@ -31,15 +30,3 @@ public class IterableMap<K,V> extends HashMap<K, V>
 
  	ondestroy
  	 	destroy keys
-
-/*@test function test()
- 	let hm = new  IterableMap<string, string>()
- 	hm.put("hah", "val1")
-	hm.remove("hah")
- 	hm.put("lol", "val2")
-
- 	for key in hm
- 	 	print(hm.get(key))
-
-
-*/

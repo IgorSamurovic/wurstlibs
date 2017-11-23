@@ -1,0 +1,10 @@
+package StringExtension
+import ObjectIds
+import LinkedList
+import IterableMap
+
+public function string.toId() returns int
+    return fourchar2int(this)
+
+public function int.toFourChar() returns string
+    return int2fourchar(this)
