@@ -1,0 +1,277 @@
+package StringTemplate
+import IterableMap
+import LinkedList
+import StringUtils 
+import HashMap
+import ClosureTimers
+
+constant BRACKET_OPEN     = "<"
+constant BRACKET_CLOSED   = ">"
+constant ESCAPE_CHAR      = "\\"
+constant CLOSING_TAG      = "/"
+constant VALUE_ASSOCIATOR = "="
+constant QUOTATION_MARK   = "\""
+
+public constant TAG_REGISTRY = new TagRegistry()
+public ColorSet COLOR_SET 
+
+constant DOM = new TagTemplate("DOM", false, (Element e) -> e.text)
+
+function initialization()
+    COLOR_SET = new ColorSet("default") 
+    ..add("em"    , "ffcc00") // Golden highlights on tooltips
+    ..add("ac"    , "c3dbff") // Autocast blue color
+    ..add("f"     , "fed312") // Top button menu
+
+    for i=0 to 11
+        COLOR_SET.add("p" + i.toString(), playercolors[i])
+
+    ColorSet.selectedSet = COLOR_SET
+
+    new ColorSet("human")
+    ..add("em"    , 0, 0, 255)
+
+    TAG_REGISTRY
+    ..add("br", true, (Element e) -> "|n")
+    ..add("upper", false, (Element e) -> e.text.toUpperCase())
+    ..add("lower", false, (Element e) -> e.text.toLowerCase())
+    ..add("c", false, (Element e) -> ColorSet.find(e.attr.staticItr().next()) + e.text + "|r")
+    ..add("spaceout", false, (Element e) -> begin
+        string val = ""
+        var num = e.attr.get("num").toInt()
+        if num == 0
+            num = 1
+        var addon = ""
+        for i=1 to num
+            addon += " "
+        for char in e.text
+            val += char + addon
+        return val
+    end)
+init
+    doAfter(0.2, ()->  initialization())
+
+public class ColorSet
+    protected static let colorSets = new HashMap<string, ColorSet>() 
+    protected let map = new HashMap<string, string>()
+    protected static ColorSet selectedSet
+
+    static function find(string colorName) returns string
+        print("looking for: " + colorName)
+        if not selectedSet.map.has(colorName)
+            if COLOR_SET.map.has(colorName)
+                 return COLOR_SET.map.get(colorName) 
+            else
+                let splitList = colorName.split(":")
+                let prefix = splitList.get(0).trim()
+                let color = splitList.get(1).trim()
+                destroy splitList
+
+                let colorSet = colorSets.get(prefix)
+                if colorSet != null
+                    let foundColor = colorSet.map.get(color)
+                    if foundColor != null
+                        return colorSet.map.get(color)
+                    else
+                        return ""
+                else
+                    return ""
+        else
+            return selectedSet.map.get(colorName)
+
+    function add(string name, color rgb)
+        map.put(name, rgb.toColorString())
+
+    function add(string name, int r, int g, int b)
+        add(name, color(r, g, b))
+
+    function add(string name, string colorString)
+        map.put(name, "|cff" + colorString)
+
+    construct(string name)
+        colorSets.put(name, this)
+
+public class TagRegistry
+    let map = new HashMap<string, TagTemplate>()
+
+    function findTag(string name) returns TagTemplate
+        return map.has(name) ? map.get(name) : DOM
+
+    function add(TagTemplate tagTemplate)
+        map.put(tagTemplate.name, tagTemplate)
+
+    function add(string name, bool empty, ElementClosure closure)
+        map.put(name, new TagTemplate(name, empty, closure))
+
+class Element
+    protected TagTemplate tagTemplate
+    protected string text
+    protected IterableMap<string, string> attr
+
+    function process(TagRegistry tagRegistry) returns string
+        text = text.process(tagRegistry)
+        return tagTemplate.closure.run(this)
+
+    construct(TagTemplate tagTemplate, IterableMap<string, string> attr, string text)
+        this.tagTemplate = tagTemplate
+        this.attr = attr
+        this.text = text
+
+    ondestroy
+        if attr != null
+            destroy attr
+
+public interface ElementClosure
+    function run(Element e) returns string
+
+public class TagTemplate
+    protected string name
+    protected bool empty
+    protected ElementClosure closure
+
+    construct(string name, bool empty, ElementClosure closure)
+        this.name = name
+        this.empty = empty
+        this.closure = closure
+
+class Tag
+    protected TagTemplate template
+    protected string text = ""
+    protected string name = ""
+    protected bool ending = false
+    protected int startIndex
+    protected int endIndex
+    
+    let attr = new IterableMap<string, string>()
+
+    function needsClose() returns bool
+        return not ending and template.empty
+
+    function process(TagRegistry registry, string content)
+        text = content.trim()
+
+        let splittext = text.split(" ")
+        let iter = splittext.iterator()
+        
+        let first = iter.next().trim()
+        if first == CLOSING_TAG
+            ending = true 
+            name = iter.next()
+        else if first.startsWith(CLOSING_TAG)
+            ending = true
+            name = first.replace(CLOSING_TAG, "")
+        else
+            name = first
+
+        template = registry.findTag(name)
+        if template != DOM
+            for str from iter
+                if str != "" and str != " "
+                    if str.contains(VALUE_ASSOCIATOR)
+                        str = str.replace(" ", "")
+                        let split = str.split(VALUE_ASSOCIATOR)
+                        attr.put(split.get(0).trim(), split.get(1).replace(QUOTATION_MARK, "").trim())
+                        destroy split
+                    else
+                        attr.put(str.trim(), "")
+        
+        iter.close()
+        destroy splittext
+
+
+public function string.process(TagRegistry tagRegistry) returns string
+    Tag startTag = null
+    Tag endTag = null
+    Tag newTag
+
+    int endingBuffer = 0
+
+    int newRawStringStartIndex = 0
+    string processed = ""
+
+    for i = 0 to this.length()
+        // Initializing variables for ease of use
+        var char = this.charAt(i)
+        var lastChar = i == 0 ? "" : this.charAt(i - 1)
+        var nextChar = i == this.length() ? "" : this.charAt(i + 1)
+
+        // Checking if the character is perhaps escaped
+        if lastChar != "\\"
+            // Checking if the character is the start of a tag
+            if char == "<"
+                for j = i to this.length()
+                    print(this.substring(0, j+1))
+                    char = this.charAt(j)
+
+                    if char == ">" and this.charAt(j - 1) != "\\"
+                        newTag = new Tag()
+                        newTag.startIndex = i
+                        newTag.endIndex = j
+                        
+                        i = j
+
+                        newTag.process(tagRegistry, this.substring(newTag.startIndex + 1, newTag.endIndex))
+                        
+                        if newTag.ending
+                            if startTag != null
+                                endTag = newTag
+                                if startTag.name== endTag.name
+                                    if endingBuffer <= 0
+                                        let elem = new Element(
+                                            startTag.template,
+                                            startTag.attr,
+                                            this.substring(startTag.endIndex+1, endTag.startIndex))
+
+                                        processed += this.substring(newRawStringStartIndex, startTag.startIndex)
+                                        processed += elem.process(tagRegistry)
+                                        
+                                        newRawStringStartIndex = endTag.endIndex + 1
+
+                                        destroy elem
+                                        destroy startTag
+                                        destroy endTag
+
+                                        startTag = null
+                                    else
+                                        endingBuffer--
+                                        destroy newTag
+                                else
+                                    destroy newTag
+                            else
+                                destroy newTag
+                        else
+                            if startTag == null
+                                startTag = newTag
+                                if startTag.template.empty
+                                    let elem = new Element(startTag.template, null, "")
+                                    processed += this.substring(newRawStringStartIndex, startTag.startIndex)
+                                    processed += elem.process(tagRegistry)
+                                    destroy elem
+                                    newRawStringStartIndex = startTag.endIndex + 1
+                                    destroy startTag
+                                    startTag = null
+                            else
+                                if startTag.name == newTag.name
+                                    endingBuffer++
+                                
+                        i = j 
+                        break
+    
+    if startTag != null
+        let elem = new Element(startTag.template, startTag.attr, this.substring(startTag.endIndex + 1, this.length()))
+        processed += elem.process(tagRegistry)
+        newRawStringStartIndex = this.length()
+        destroy startTag
+        destroy elem
+
+    processed += this.substring(newRawStringStartIndex, this.length())
+    return processed
+
+public function string.process() returns string
+    return this.process(TAG_REGISTRY)
+
+@test function test()
+    print("<c p0>H<c p1>ah</c></c>".process())
+
+init
+    doAfter(0.5, ()-> test())
