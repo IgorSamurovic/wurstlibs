@@ -1,0 +1,39 @@
+package BatchProcessing
+
+public module BatchProcessing
+	static thistype bp_first = null
+	static thistype bp_last = null
+	static int bp_size = 0
+	thistype bp_prev
+	thistype bp_next
+
+	abstract function process()
+
+	static function processAll()
+		var obj = bp_first
+		while obj != null
+			obj.process()
+			obj = obj.bp_next
+
+	construct()
+		bp_size++
+		if bp_size == 1
+			bp_first = this
+			bp_prev = null	
+		else
+			bp_prev = bp_last
+			bp_last.bp_next = this
+			bp_first.bp_prev = this
+		bp_next = null
+		bp_last = this
+				
+	ondestroy
+		bp_size--
+		if this != bp_first
+			bp_prev.bp_next = bp_next
+		else
+			bp_first = bp_next
+		if this != bp_last
+			bp_next.bp_prev = bp_prev	
+		else
+			bp_last = bp_prev

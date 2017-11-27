@@ -1,6 +1,5 @@
 package ObjectIdFactory
 import ObjectIds
-import HashMap
 
 public let UNIT_GEN = new ObjectIdFactory('xU00')
 public let HERO_GEN = new ObjectIdFactory('XU00')
@@ -23,8 +22,6 @@ public class ObjectIdFactory
     private static int step2fix = 6
     private static int step3 = 75
     private static int step3fix = 256-75
-
-    private HashMap<int, ObjectIdFactory> map
 
     function setStartingId(int startingId)
         string startingIdString = int2fourchar(startingId)

@@ -1,0 +1,20 @@
+package IterableMapModule
+import TypeCasting
+import HashMap
+
+public class HaxLul
+    use MapModule<int>
+
+public module MapModule<T>
+    static let _map = new HashMap<T, thistype>()
+    T _mapRef 
+
+    static function of(T t) returns thistype
+        return _map.get(t)
+
+    function setRefrence(T t)
+        _mapRef = t
+        _map.put(t, this)
+
+    ondestroy
+        _map.remove(_mapRef)

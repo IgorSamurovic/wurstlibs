@@ -1,0 +1,11 @@
+package WurstExportedObjects_w3u
+import ObjEditingNatives
+
+//modifiedTable: 
+
+@compiletime function create_w3u_XXXX()
+	let u = createObjectDefinition("w3u", 'XXXX', 'hpea')
+	u.setInt("wurs", 42)
+	u.setString("unam", "|cffc3dbffPEZENT|r")
+
+

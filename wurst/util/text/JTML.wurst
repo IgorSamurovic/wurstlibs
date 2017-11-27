@@ -151,7 +151,7 @@ public function string.process(TagRegistry tagRegistry) returns string
             // Checking if the character is the start of a tag
             if char == "<"
                 for j = i to this.length()
-                    print(this.substring(0, j+1))
+                    //print(this.substring(0, j+1))
                     char = this.charAt(j)
 
                     if char == ">" and this.charAt(j - 1) != "\\"
