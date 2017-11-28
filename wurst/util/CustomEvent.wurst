@@ -2,10 +2,10 @@ package CustomEvent
 
 public module CustomEvent
     private trigger trig = CreateTrigger()
-    static let instance = new CustomEvent()
 
     function register(code func)
         trig.addCondition(Filter(func))
     
     function fire()
         trig.evaluate()
+

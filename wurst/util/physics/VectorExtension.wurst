@@ -1,0 +1,4 @@
+package VectorExtension
+
+public function print(vec2 vec)
+    print("(" + vec.x.toString() + ", " + vec.y.toString() + ")")

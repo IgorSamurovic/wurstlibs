@@ -1,0 +1,140 @@
+package Object2D
+import VectorExtension
+import MathExtension
+
+function angle.inverse() returns angle
+    return angle(this.radians + PI)
+
+function angle.normalize() returns angle
+    return angle(this.radians + (this.radians < 0).toInt() * PI2 - PI2 * R2I(this.radians/ PI2))
+
+public interface Object2D
+    function update()
+
+public class Rectangle implements Object2D
+    protected real array[10] reals
+    protected real array[4] x
+    protected real array[4] y
+
+    protected vec2 center
+    protected angle facing
+
+    protected vec2 dimension
+    protected vec2 offset
+    protected vec2 angOffset
+
+    protected vec2 min
+    protected vec2 max
+    protected bool updated = false
+
+    function setAngle(angle ang)
+        facing = ang
+        updated = false
+
+    function moveBy(vec2 vec)
+        center += vec
+        updated = false
+
+    function setCenter(vec2 vec)
+        center = vec
+        updated = false
+
+    function getCenter() returns vec2
+        return center
+
+    function getDimensions() returns vec2
+        return dimension
+
+    function update()
+        if not updated
+            angOffset = offset.rotate(facing)
+            updatePoints()
+            updateExtremes()
+            updated = true
+
+    function updatePoints()
+        x[0] = center.x + angOffset.x
+        y[0] = center.y + angOffset.y
+        x[1] = center.x + angOffset.x
+        y[1] = center.x - angOffset.y
+        x[2] = center.x - angOffset.x
+        y[2] = center.x - angOffset.y
+        x[3] = center.x - angOffset.x
+        y[3] = center.x + angOffset.y
+
+    function updateExtremes()
+        min = vec2(1000000, 1000000)
+        max = vec2(-1000000, -1000000)
+        for i=0 to 3
+            if x[i] > max.x
+                max.x = x[i]
+            if x[i] < min.x
+                min.x = x[i]
+            if y[i] > max.y
+                max.y = y[i]
+            if y[i] < min.y
+                min.y = y[i]
+
+    construct(vec2 center, vec2 dim, angle facing)
+        this.center = center
+        this.dimension = dim
+        this.facing = facing
+        this.offset = 0.5 * dim
+        update()
+
+    function checkCollision(Rectangle that) returns bool
+        return ((max.x <= that.max.x and max.x >= that.min.x) or (min.x <= that.max.x and min.x >= that.min.x))
+        and    ((max.y <= that.max.y and max.y >= that.min.y) or (min.y <= that.max.y and min.y >= that.min.y))     
+
+    function getAnglePoint(angle ang) returns vec2
+        var x = 0.
+        var y = 0.
+
+        let deg = ang.normalize().degrees()
+
+        // Calculate X first
+        if deg >= 315 or deg < 45
+            x = 1
+        else if deg < 90
+            x = 1 -(deg - 45) / 45
+        else if deg < 135
+            x = -(deg - 90) / 45
+        else if deg < 225
+            x = -1
+        else if deg < 270
+            x = -1 +(deg - 225) / 45
+        else if deg < 315
+            x = (deg - 270) / 45
+
+        // Calculate Y
+        if deg >= 0 and deg < 45
+            y = deg / 45
+        else if deg < 135
+            y = 1
+        else if deg < 180
+            y = 1 -(deg - 135) / 45
+        else if deg < 225
+            y = -(deg - 180) / 45
+        else if deg < 315
+            y = -1
+        else if deg <= 360
+            y = -1 + (deg - 315) / 45
+
+        return center + vec2(angOffset.x * x, angOffset.y * y)
+
+    function getDistance(Rectangle that)
+        //if point1.
+
+@Test function test()
+    let rect1 = new Rectangle(vec2(0, 0), vec2(2, 2), angle(0))
+    let rect2 = new Rectangle(vec2(2, 2), vec2(8, 2), angle(PI/4))
+    print("|n")
+    /*print(rect1.point1)
+    print(rect1.point2)
+    print(rect1.point3)
+    print(rect1.point4)
+    print(rect2.point1)
+    print(rect2.point2)
+    print(rect2.point3)
+    print(rect2.point4)*/
+    print(rect1.checkCollision(rect2))

@@ -1,0 +1,3 @@
+package MathExtension
+
+public constant PIFOURTH = PI/4
