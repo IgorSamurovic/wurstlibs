@@ -20,10 +20,10 @@ public class TooltipTemplate
     static let SEPARATOR       = "{name}{separator}{value}"
 
 public class TooltipStyle
-    static IterableMap<string, string> BASIC = not compiletime ? null : new IterableMap<string, string>()
+    static IterableMap<string, string> BASIC = new IterableMap<string, string>()
         ..put("hotkey", "[<c em>{hotkey}</c>]")
         ..put("level" , "[<c em>Level {level}</c>]")
-    static IterableMap<string, string> EXTENDED = not compiletime ? null : new IterableMap<string, string>()
+    static IterableMap<string, string> EXTENDED = new IterableMap<string, string>()
         ..put("name"  , "<c em>{name}</c>:")
         ..put("value" , "{value}")
 
@@ -246,9 +246,12 @@ public class TooltipFragment
                     split = new LinkedList<string>
                     let gotRlc = fieldRlc.get(rlc)
                     for i=1 to levels
-                        split.add(gotRlc.run(i).toString())
+                        if i != level
+                            split.add(gotRlc.run(i).toString())
+                        else
+                            split.add("<c em>{0}</c>".format(gotRlc.run(i).toString()))
 
-                    fields.put(rlc+":all", split.joinBy("/"))
+                    fields.put(rlc+":all", split.joinBy(separator))
                 for ilc in fieldIlc
                     fields.put(ilc, fieldIlc.get(ilc).run(level).toString())
                 for slc in fieldSlc
@@ -363,5 +366,6 @@ public function TooltipFragment.set(string name, StringLevelClosure slc)
 @Test function test()
     let tip = new Tooltip("Upgrade to", "This building", Hotkey.Q)
     tip.addFragment()..set("Something", "5")
-    tip.addFragment()..setField("levels", "5")..set("Something", (int lvl) -> lvl * 0.3)..setTemplate("{name} {value:all}")
+    tip.addFragment()..setSeparator("/")..setField("haxlul", (int lvl) -> lvl * 0.3)..setField("levels", "5")..set("Something", (int lvl) -> lvl * 0.3)..setTemplate("{name} {value:all} {haxlul}")
+    print(tip.getBasicTip(3))
     print(tip.getExtendedTip(3))
