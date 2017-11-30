@@ -1,0 +1,42 @@
+package Blockers
+import MapModule
+import Object2D
+
+public class Blocker
+    use MapModule<destructable>
+    protected Rectangle r
+
+    function getRectangle() returns Rectangle
+        return r
+
+    construct(destructable d)
+        attachTo(d)
+        r = new Rectangle(d.getPos(), vec2(64, 64), angle(0))
+
+init
+    let incr = 1024.
+    let r = Rect(0, incr, 0, incr)
+    
+    let center = 512
+    let startX = GetRectMinX(bj_mapInitialPlayableArea) + center
+    let startY = GetRectMinY(bj_mapInitialPlayableArea) + center
+    let endX = GetRectMaxX(bj_mapInitialPlayableArea)
+    let endY = GetRectMaxY(bj_mapInitialPlayableArea)
+
+    var x = startX
+
+    EnumDestructablesInRectAll(bj_mapInitialPlayableArea, () -> begin
+       // new Blocker(GetEnumDestructable())
+    end)
+    /*
+    while x < endX
+        var y = startY
+        while y < endY
+            print(y)
+            MoveRectTo(r, x, y)
+            EnumDestructablesInRectAll(bj_mapInitialPlayableArea, () -> begin
+                new Blocker(GetEnumDestructable())
+                print("BROKU")
+            end)
+            y += incr
+        x += incr*/

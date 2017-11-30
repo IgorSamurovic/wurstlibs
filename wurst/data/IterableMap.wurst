@@ -16,6 +16,9 @@ public class IterableMap<K,V> extends HashMap<K, V>
  	function staticItr() returns LLStaticIterator<K>
  	 	return keys.staticItr()
 
+	function isKeyUsed(K key) returns bool
+		return keys.contains(key)
+
  	/** Saves the given value under the given key */
 	override function put(K key, V value)
  	 	super.put(key, value)

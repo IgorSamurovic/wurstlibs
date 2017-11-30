@@ -13,6 +13,7 @@ function getDummy(real x, real y) returns unit
     return createUnit(Player(0), 'hpea', vec2(x, y), angle(0))..addAbility('Arav')
 
 init
+/*
     Cheat("Iseedeadpeople")
     //
     let u = getDummy(-3000, 2000)

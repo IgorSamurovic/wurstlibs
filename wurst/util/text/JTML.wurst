@@ -225,7 +225,7 @@ public function string.process() returns string
     print("Learn ThisSpell - [<c em>Q</c>] - [<c em>Level {lvl}</c>]".r("lvl", "3").process())
 
 init
-    nullTimer(()-> test())
+    //nullTimer(()-> test())
 
 public function string.r(string key, string value) returns string
     return this.replace("{" + key + "}", value)

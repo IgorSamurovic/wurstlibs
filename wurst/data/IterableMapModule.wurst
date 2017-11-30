@@ -2,9 +2,6 @@ package IterableMapModule
 import TypeCasting
 import HashMap
 
-public class HaxLul
-    use MapModule<int>
-
 public module MapModule<T>
     static let _map = new HashMap<T, thistype>()
     T _mapRef 

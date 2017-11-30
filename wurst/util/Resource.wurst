@@ -1,0 +1,157 @@
+package Resource
+import LinkedList
+import HashMap
+import MapModule
+import IterableMap
+import LinkedListModule
+
+public class ResourceCost 
+    let map = new IterableMap<ResourceType, int>
+        
+    function set(ResourceType rt, int amount)
+         map.put(rt, amount)
+
+    function add(ResourceType rt, int amount)
+        set(rt, amount)
+
+    function get(ResourceType rt) returns int
+        return map.get(rt)
+    
+    function remove(ResourceType rt)
+        map.remove(rt)
+
+    function isAffordableTo(ResourceStorageI storage) returns bool
+        for rt in map
+            if not storage.has(rt, get(rt))
+                return false
+        return true
+
+    function charge(ResourceStorageI storage)
+        if this.isAffordableTo(storage)
+            forceCharge(storage)
+        
+    function forceCharge(ResourceStorageI storage)
+        for rt in map
+            storage.remove(rt, map.get(rt))
+
+    construct(ResourceType rt, int amount)
+        map.put(rt, amount)
+    
+    construct()
+
+
+public class ResourceType
+    use LinkedListModule
+
+    protected var value = 1
+
+    function addToPlayers()
+        for i=0 to 14
+            Player(i).getResources().stores(this)
+
+    construct()
+        addToPlayers()
+    
+    construct(int value)
+        this.value = value
+        addToPlayers()
+
+
+public interface ResourceStorageI
+    function set(ResourceType rt, int amount)
+    function add(ResourceType rt, int amount)
+    function remove(ResourceType rt, int amount)
+
+    function get(ResourceType rt) returns int
+    function store(ResourceType rt, bool doStore)
+    function stores(ResourceType rt) returns bool
+    function has(ResourceType rt, int amount) returns bool
+
+public class ResourceStorage<T> implements ResourceStorageI
+    use MapModule<T>
+    
+    protected let map = new IterableMap<ResourceType, int>
+    
+    /* ADD / SET / REMOVE */
+
+    /** Sets the amount of a resource type to a positive number */
+    function set(ResourceType rt, int amount)
+        map.put(rt, amount > 0 ? amount : 0)
+
+    /** Adds a specified amount of a resource type to the storage. */
+    function add(ResourceType rt, int amount)
+        set(rt, get(rt) + amount)
+
+    /** Removes a specified amount of a resource type from the storage. */
+    function remove(ResourceType rt, int amount)
+        set(rt, get(rt) - amount)
+
+    /* CHECKS */
+
+    /** Returns the amount of a resource type stored. */
+    function get(ResourceType rt) returns int
+        return map.get(rt)
+
+    /** Returns whether the storage stores a resource type. */
+    function stores(ResourceType rt) returns bool
+        return map.isKeyUsed(rt)
+
+    /** Returns whether the storage has a specified amount of a resource type. */
+    function has(ResourceType rt, int amount) returns bool
+        return map.get(rt) >= amount
+
+    /** Sets whether the storage supports a resource type. */
+    function store(ResourceType rt, bool doStore)
+        if doStore
+            if not map.isKeyUsed(rt)
+                map.put(rt, 0)
+        else
+            if map.isKeyUsed(rt)
+                map.remove(rt)
+
+    /* TRANSFERS TO ANOTHER STORAGE */
+
+    /** Transfers the total amount of all resources to another storage. */
+    function transferTo(ResourceStorageI that)
+        for rt in map
+            transferTo(rt, that)
+
+    /** Transfers a specified amount of one resource type to another storage. */
+    function transferTo(ResourceType rt, ResourceStorageI that, int amount)
+        if that.stores(rt)
+            let total = get(rt)
+            var toTransfer = amount
+            if toTransfer < 0
+                toTransfer = 0
+            else if toTransfer > total
+                toTransfer = total
+            this.remove(rt, toTransfer)
+            that.add(rt, toTransfer)
+
+    /** Transfers all of one resource type to another storage. */
+    function transferTo(ResourceType rt, ResourceStorageI that)
+        if that.stores(rt)
+            let toTransfer = this.get(rt)
+            this.remove(rt, toTransfer)
+            that.add(rt, toTransfer)
+
+    construct(T t)
+        attachTo(t)
+
+
+/* API */
+public function player.getResources() returns ResourceStorage<player>
+    return playerStorages[this.getId()]
+
+public function player.canAfford(ResourceCost cost) returns bool
+    return cost.isAffordableTo(this.getResources())
+
+public function player.pay(ResourceCost cost)
+    cost.charge(this.getResources())
+
+/* INIT */
+ResourceStorage<player> array playerStorages
+
+init
+    for i=0 to 14
+        playerStorages[i] = new ResourceStorage<player>(Player(i))

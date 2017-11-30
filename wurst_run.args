@@ -6,11 +6,11 @@ Following are the default enabled arguments:
 
 -runcompiletimefunctions
 -injectobjects
--stacktraces
+stacktraces
 
 Optimization arguments (default disabled):
 
-inline
+-inline
 opt
 localOptimizations
 
