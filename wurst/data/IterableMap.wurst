@@ -1,7 +1,6 @@
 package IterableMap 
 import LinkedList
 import HashMap
-import Wurstunit
 
 import public TypeCasting
 import public Table
@@ -16,7 +15,7 @@ public class IterableMap<K,V> extends HashMap<K, V>
  	function staticItr() returns LLStaticIterator<K>
  	 	return keys.staticItr()
 
-	function isKeyUsed(K key) returns bool
+	override function has(K key) returns bool
 		return keys.contains(key)
 
  	/** Saves the given value under the given key */

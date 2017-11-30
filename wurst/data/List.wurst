@@ -1,0 +1,63 @@
+package List
+import LinkedList
+import TypeCasting
+
+public interface ListComparator<T>
+	function compare(T obj1, T obj2) returns bool
+
+public class List<T> extends LinkedList<T>
+
+    function sortBy(ListComparator<T> comp)
+        for i=0 to this.getSize() - 2
+            let current = this.get(i)
+            var lowest = current
+            var lowestId = i
+            for j = i + 1 to this.getSize() - 1
+                let frag = this.get(j)
+                if comp.compare(frag, lowest)
+                    lowest = frag
+                    lowestId = j
+            if current != lowest
+                this.set(i, lowest)
+                this.set(lowestId, current)
+
+@Test function testSort()
+    let list = new List<int>
+    list
+        ..add(0)
+        ..add(-500)
+        ..add(500)
+        ..add(1000)
+        ..add(-1000)
+        /*
+        ..add("d")
+        ..add("a")
+        ..add("c")
+        ..add("x")
+        ..add("ggdsga")
+        ..add("e")
+        ..add("f")
+        ..add("b")
+        ..add("z")
+        */
+
+    //list.sort((int obj1, int obj2) -> obj1 < obj2)
+    list.sort()
+    for i=0 to list.getSize() - 1
+        print(list.get(i))
+
+
+function List<string>.sort()
+    this.sortBy((string str1, string str2) -> begin
+        bool doSwap = false
+        for i=0 to str1.length() -1
+            if str2.length() < i + 1
+                break
+            if str1.charAt(i).toCharsetInt() < str2.charAt(i).toCharsetInt()
+                doSwap = true
+                break
+        return doSwap
+    end)
+
+function List<int>.sort()
+    this.sortBy((int int1, int int2) -> int1 < int2)

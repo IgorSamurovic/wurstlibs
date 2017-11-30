@@ -2,7 +2,6 @@ package JTML
 import IterableMap
 import LinkedList
 import StringUtils 
-import HashMap
 import ClosureTimers
 
 constant BRACKET_OPEN     = "<"
@@ -16,7 +15,10 @@ public class TagRegistry
     static constant let DEFAULT = new TagRegistry()
     static constant let DOM = new TagTemplate("DOM", false, (JTMLElement e) -> e.text)
 
-    let map = new HashMap<string, TagTemplate>()
+    let map = new IterableMap<string, TagTemplate>()
+
+    function getMap() returns  IterableMap<string, TagTemplate> 
+        return map
 
     function findTag(string name) returns TagTemplate
         return map.has(name) ? map.get(name) : DOM
@@ -29,6 +31,7 @@ public class TagRegistry
 
     @compiletime static function initialize()
         DEFAULT
+        ..add(DOM)
         ..add("br", true, (JTMLElement e) -> "|n")
         ..add("upper", false, (JTMLElement e) -> e.text.toUpperCase())
         ..add("lower", false, (JTMLElement e) -> e.text.toLowerCase())
@@ -40,11 +43,22 @@ public class TagRegistry
             var addon = ""
             for i=1 to num
                 addon += " "
-            for char in e.text
-                val += char + addon
+            for i=0 to e.text.length() -1
+                if i != e.text.length() -1
+                    let tag = e.text.substring(i, i + 2)
+                    if tag == "|c"
+                        val += e.text.substring(i, i + 9)
+                        i += 8
+                    else if tag == "|r" or tag == "|n"
+                        val += tag
+                        i += 2
+                    else 
+                        val += e.text.charAt(i)
+                        if i != e.text.length() - 1 
+                            val += addon
             return val
         end)
-    
+
 init
     TagRegistry.initialize()
 
@@ -52,6 +66,9 @@ public class JTMLElement
     protected TagTemplate tagTemplate
     protected string text
     protected IterableMap<string, string> attr
+
+    function firstAttribute() returns string
+        return attr.staticItr().next()
 
     function getText() returns string
         return text
@@ -79,6 +96,9 @@ public class TagTemplate
     protected string name
     protected bool empty
     protected JTMLElementClosure closure
+
+    function getName() returns string
+        return name
 
     construct(string name, bool empty, JTMLElementClosure closure)
         this.name = name
@@ -132,7 +152,7 @@ class Tag
 
 public function string.process(TagRegistry tagRegistry) returns string
     Tag startTag = null
-    Tag endTag = null
+    Tag endTag
     Tag newTag
 
     int endingBuffer = 0
@@ -140,18 +160,16 @@ public function string.process(TagRegistry tagRegistry) returns string
     int newRawStringStartIndex = 0
     string processed = ""
 
-    for i = 0 to this.length()
+    for i = 0 to this.length() - 1
         // Initializing variables for ease of use
         var char = this.charAt(i)
         var lastChar = i == 0 ? "" : this.charAt(i - 1)
-        var nextChar = i == this.length() ? "" : this.charAt(i + 1)
 
         // Checking if the character is perhaps escaped
         if lastChar != "\\"
             // Checking if the character is the start of a tag
             if char == "<"
-                for j = i to this.length()
-                    //print(this.substring(0, j+1))
+                for j = i to this.length() - 1
                     char = this.charAt(j)
 
                     if char == ">" and this.charAt(j - 1) != "\\"
@@ -225,7 +243,7 @@ public function string.process() returns string
     print("Learn ThisSpell - [<c em>Q</c>] - [<c em>Level {lvl}</c>]".r("lvl", "3").process())
 
 init
-    //nullTimer(()-> test())
+    nullTimer(()-> test())
 
 public function string.r(string key, string value) returns string
     return this.replace("{" + key + "}", value)

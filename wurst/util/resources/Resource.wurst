@@ -50,11 +50,13 @@ public class ResourceType
             Player(i).getResources().stores(this)
 
     construct()
-        addToPlayers()
+        if not compiletime
+            addToPlayers()
     
     construct(int value)
         this.value = value
-        addToPlayers()
+        if not compiletime
+            addToPlayers()
 
 
 public interface ResourceStorageI
@@ -94,7 +96,7 @@ public class ResourceStorage<T> implements ResourceStorageI
 
     /** Returns whether the storage stores a resource type. */
     function stores(ResourceType rt) returns bool
-        return map.isKeyUsed(rt)
+        return map.has(rt)
 
     /** Returns whether the storage has a specified amount of a resource type. */
     function has(ResourceType rt, int amount) returns bool
@@ -103,10 +105,10 @@ public class ResourceStorage<T> implements ResourceStorageI
     /** Sets whether the storage supports a resource type. */
     function store(ResourceType rt, bool doStore)
         if doStore
-            if not map.isKeyUsed(rt)
+            if not map.has(rt)
                 map.put(rt, 0)
         else
-            if map.isKeyUsed(rt)
+            if map.has(rt)
                 map.remove(rt)
 
     /* TRANSFERS TO ANOTHER STORAGE */
@@ -140,12 +142,15 @@ public class ResourceStorage<T> implements ResourceStorageI
 
 
 /* API */
+/** Returns the resource storage of this player. */
 public function player.getResources() returns ResourceStorage<player>
     return playerStorages[this.getId()]
 
+/** Checks whether this player can afford a resource cost. */
 public function player.canAfford(ResourceCost cost) returns bool
     return cost.isAffordableTo(this.getResources())
 
+/** Spends this player's resources to pay a cost. */
 public function player.pay(ResourceCost cost)
     cost.charge(this.getResources())
 

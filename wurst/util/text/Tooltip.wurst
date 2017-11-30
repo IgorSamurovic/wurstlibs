@@ -1,9 +1,10 @@
 package Tooltip
-import LinkedList
+import List
 import Hotkey
 import StringUtils
 import AbilityObjEditing
 import IterableMap
+import LinkedList
 import ColorSet
 import JTML
 import StringExtension
@@ -50,7 +51,7 @@ public class Tooltip
     protected var fragmentSeparator = DEFAULT_SEPARATOR
 
     protected let basicFragment = new TooltipFragment(this)
-    protected let fragments     = new LinkedList<TooltipFragment>()
+    protected let fragments     = new List<TooltipFragment>()
 
     protected int nextPriority = -1
 
@@ -141,27 +142,14 @@ public class Tooltip
         if hotkey != null
             basicFragment.setField("hotkey", hotkey.getChar())
 
+    /** Sort the fragments by priority */
     function sortFragments()
-        for i=0 to fragments.getSize() - 2
-            let current = fragments.get(i)
-            var lowest = current
-            var lowestId = i
-            for j = i + 1 to fragments.getSize() - 1
-                let frag = fragments.get(j)
-                if frag.getPriority() < lowest.getPriority()
-                    lowest = frag
-                    lowestId = j
-            if current != lowest
-                fragments.set(i, lowest)
-                fragments.set(lowestId, current)
+        fragments.sortBy((TooltipFragment obj1, TooltipFragment obj2) -> obj1.getPriority() < obj2.getPriority() )
 
     function removeFragment(TooltipFragment fragment)
         fragments.remove(fragment)
 
     function addFragment() returns TooltipFragment
-        if not compiletime
-            return null
-
         let fragment = new TooltipFragment(this)
             ..setTemplate(fragmentTemplate)
             ..setStyle(fragmentStyle)
@@ -184,7 +172,7 @@ public class TooltipFragment
 
     protected var priority = 0
     protected let fields = new IterableMap<string, string>() //typically "hotkey", "action", "name", "level"
-    protected let fieldLists = new IterableMap<string, LinkedList<string>>()
+    protected let fieldLists = new IterableMap<string, List<string>>()
     protected let fieldRlc = new IterableMap<string, RealLevelClosure>()
     protected let fieldSlc = new IterableMap<string, StringLevelClosure>()
     protected let fieldIlc = new IterableMap<string, IntLevelClosure>()
@@ -226,7 +214,7 @@ public class TooltipFragment
         fields.put(key, value)
 
     /** Adds a list field to the map, formating the string passed. */
-    function setField(string key, LinkedList<string> values)
+    function setField(string key, List<string> values)
         fieldLists.put(key, values)
 
     function setField(string key, RealLevelClosure rlc)
@@ -242,26 +230,42 @@ public class TooltipFragment
 
     function bakeVariables()
         int level
-        if fields.get("level") != ""
-            level = fields.get("level").toInt()
+        int levels 
+        
+        let flvl = fields.get("level")
+        let flvls = fields.get("levels")
+        
+        if flvl != ""
+            level = flvl.toSafeInt()
+            levels = flvls.toSafeInt()
             if level > 0
+                LinkedList<string> joined
+                LinkedList<string> split
                 for rlc in fieldRlc
                     fields.put(rlc, fieldRlc.get(rlc).run(level).toString())
+                    split = new LinkedList<string>
+                    let gotRlc = fieldRlc.get(rlc)
+                    for i=1 to levels
+                        split.add(gotRlc.run(i).toString())
+
+                    fields.put(rlc+":all", split.joinBy("/"))
                 for ilc in fieldIlc
                     fields.put(ilc, fieldIlc.get(ilc).run(level).toString())
                 for slc in fieldSlc
                     fields.put(slc, fieldSlc.get(slc).run(level))
 
     function preProcessTemplate() returns string
+       
         bakeVariables()
         string processed = template
 
         // Process the template by removing all nonfound values
         let tmpList = processed.getAllTemplateFields()
+       
         for field in tmpList
             if not fieldLists.has(field) and not fields.has(field)
                 processed = processed.replace("{{0}}".format(field), "")
-
+    
         for key in fieldLists
             var savedString = ""
             let list = fieldLists.get(key)
@@ -324,7 +328,7 @@ public function TooltipFragment.setName(string value)
 public function TooltipFragment.setValue(string value)
     this.setField("value", value)
 
-public function TooltipFragment.setValue(LinkedList<string> value)
+public function TooltipFragment.setValue(List<string> value)
     this.setField("value", value)
 
 public function TooltipFragment.setValue(RealLevelClosure rlc)
@@ -340,7 +344,7 @@ public function TooltipFragment.set(string name, string value)
     this.setField("name", name)
     this.setField("value", value)
 
-public function TooltipFragment.set(string name, LinkedList<string> value)
+public function TooltipFragment.set(string name, List<string> value)
     this.setField("name", name)
     this.setField("value", value)
 
@@ -355,3 +359,9 @@ public function TooltipFragment.set(string name, IntLevelClosure ilc)
 public function TooltipFragment.set(string name, StringLevelClosure slc)
     this.setField("name", name)
     this.fieldSlc.put("value", slc)
+
+@Test function test()
+    let tip = new Tooltip("Upgrade to", "This building", Hotkey.Q)
+    tip.addFragment()..set("Something", "5")
+    tip.addFragment()..setField("levels", "5")..set("Something", (int lvl) -> lvl * 0.3)..setTemplate("{name} {value:all}")
+    print(tip.getExtendedTip(3))

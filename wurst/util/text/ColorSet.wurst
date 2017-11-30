@@ -1,19 +1,17 @@
 package ColorSet
 import JTML
-import HashMap
 import IterableMap
 import StringUtils
 
 constant DELIMITER = ":" 
 
 public class ColorSet
-    protected static let colorSets = new HashMap<string, ColorSet>() 
-    static constant let DEFAULT = new ColorSet("default")
-    protected static ColorSet selectedSet = DEFAULT
-    protected let map = new HashMap<string, string>()
+    protected static let colorSets = new IterableMap<string, ColorSet>()
+    protected static let DEFAULT = new ColorSet("default")
+    protected static var selectedSet = DEFAULT
+    protected IterableMap<string, string> map
 
     static function find(string colorName) returns string
-        print("looking for: " + colorName)
         if colorName.startsWith("#")
             return "|cFF" + colorName.substring(1, 7)
         if not selectedSet.map.has(colorName)
@@ -36,7 +34,7 @@ public class ColorSet
                     return ""
         else
             return selectedSet.map.get(colorName)
-
+        
     function add(string name, color rgb)
         map.put(name, rgb.toColorString())
 
@@ -47,10 +45,11 @@ public class ColorSet
         map.put(name, "|cff" + colorString)
 
     construct(string name)
+        map = new IterableMap<string, string>()
         colorSets.put(name, this)
 
     @compiletime static function initialize()
-        DEFAULT
+        DEFAULT 
         ..add("em"    , "ffcc00") // Golden highlights on tooltips
         ..add("ac"    , "c3dbff") // Autocast blue color
         ..add("f"     , "fed312") // Top button menu
@@ -61,7 +60,10 @@ public class ColorSet
         new ColorSet("human")
         ..add("em"    , 0, 0, 255)
 
-        TagRegistry.DEFAULT..add("c", false, (JTMLElement e) -> ColorSet.find(e.getAttr().staticItr().next()) + e.getText() + "|r")
+        TagRegistry.DEFAULT..add("c", false, (JTMLElement e) -> ColorSet.find(e.firstAttribute()) + e.getText() + "|r")
 
 init
     ColorSet.initialize()
+
+@Test function test()
+    print("<spaceout><c human:em>HAI!</c></spaceout>".process())

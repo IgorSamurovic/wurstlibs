@@ -1,39 +1,39 @@
 package BatchProcessing
 
 public module BatchProcessing
-	static thistype bp_first = null
-	static thistype bp_last = null
-	static int bp_size = 0
-	thistype bp_prev
-	thistype bp_next
+	static thistype zz__first = null
+	static thistype zz__last = null
+	static int zz__size = 0
+	thistype zz__prev
+	thistype zz__next
 
 	abstract function process()
 
 	static function processAll()
-		var obj = bp_first
+		var obj = zz__first
 		while obj != null
 			obj.process()
-			obj = obj.bp_next
+			obj = obj.zz__next
 
 	construct()
-		bp_size++
-		if bp_size == 1
-			bp_first = this
-			bp_prev = null	
+		zz__size++
+		if zz__size == 1
+			zz__first = this
+			zz__prev = null	
 		else
-			bp_prev = bp_last
-			bp_last.bp_next = this
-			bp_first.bp_prev = this
-		bp_next = null
-		bp_last = this
+			zz__prev = zz__last
+			zz__last.zz__next = this
+			zz__first.zz__prev = this
+		zz__next = null
+		zz__last = this
 				
 	ondestroy
-		bp_size--
-		if this != bp_first
-			bp_prev.bp_next = bp_next
+		zz__size--
+		if this != zz__first
+			zz__prev.zz__next = zz__next
 		else
-			bp_first = bp_next
-		if this != bp_last
-			bp_next.bp_prev = bp_prev	
+			zz__first = zz__next
+		if this != zz__last
+			zz__next.zz__prev = zz__prev	
 		else
-			bp_last = bp_prev
+			zz__last = zz__prev

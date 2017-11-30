@@ -8,7 +8,7 @@ public class Hotkey
         for hotkey in Hotkey
             if char == hotkey.char
                 return hotkey
-        return null
+        return NONE
 
     static let Q = new Hotkey("Q", 0, 0, "animatedead")
     static let W = new Hotkey("W", 1, 0, "ancestralspirittarget")
