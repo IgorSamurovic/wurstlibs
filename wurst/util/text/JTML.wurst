@@ -119,7 +119,7 @@ class Tag
         return not ending and template.empty
 
     function process(TagRegistry registry, string content)
-        text = content.trim()
+        text = content//.trim()
 
         let splittext = text.split(" ")
         let iter = splittext.iterator()
@@ -266,7 +266,7 @@ public function string.getAllTemplateFields() returns LinkedList<string>
             starts.add(index + 1)
         if char == "}" and starts.getSize() > 0
             endIndex = index
-            list.add(this.substring(starts.pop(), endIndex))
+            list.add((this.substring(starts.pop(), endIndex).trim()))
 
         index++
 
