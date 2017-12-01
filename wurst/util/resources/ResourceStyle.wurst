@@ -3,11 +3,7 @@ import Resource
 import MapModule
 
 public function ResourceType.getStyle() returns ResourceTypeStyle
-    let style = ResourceTypeStyle.of(this)
-    if style == null
-        return new ResourceTypeStyle(this)
-    else
-        return style
+    return ResourceTypeStyle.of(this)
 
 public class ResourceTypeStyle
     use MapModule<ResourceType>
@@ -37,5 +33,5 @@ public class ResourceTypeStyle
     function getColor() returns color
         return rgb
 
-    construct(ResourceType rt)
-        attachTo(rt)
+    construct(ResourceType t)
+        attachTo(t)

@@ -2,14 +2,14 @@ package MapModule
 import TypeCasting
 import HashMap
 
-public module MapModule<T>
-    static let zzz_map = new HashMap<T, thistype>()
-    T mapRef 
+public module MapModule<Z>
+    protected static let zzz_map = new HashMap<Z, thistype>()
+    protected Z mapRef 
 
-    static function of(T t) returns thistype
+    static function of(Z t) returns thistype
         return zzz_map.get(t)
 
-    function attachTo(T t)
+    function attachTo(Z t)
         mapRef = t
         zzz_map.put(t, this)
 

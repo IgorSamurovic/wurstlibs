@@ -240,7 +240,7 @@ public function string.process() returns string
     return this.process(TagRegistry.DEFAULT)
 
 @test function test()
-    print("Learn ThisSpell - [<c em>Q</c>] - [<c em>Level {lvl}</c>]".r("lvl", "3").process())
+    //print("Learn ThisSpell - [<c em>Q</c>] - [<c em>Level {lvl}</c>]".r("lvl", "3").process())
 
 init
     nullTimer(()-> test())
