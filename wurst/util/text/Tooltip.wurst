@@ -1,6 +1,6 @@
 package Tooltip
 import List
-import Hotkey
+import public Hotkey
 import StringUtils
 import AbilityObjEditing
 import IterableMap
@@ -43,11 +43,9 @@ public class TooltipTemplate
     static let BASIC   = "{hotkey} {action} {name} {level}"
 
     static let NONE            = "{value}"
-    static let NORMAL          = "{name} {value}"
-    static let INDENT          = "{name}    {value}"
-    static let NEWLINE         = "{name}|n{value}"
-    static let NEWLINE_INDENT  = "{name}|n    {value}"
-    static let SEPARATOR       = "{name}{separator}{value}"
+    static let NORMAL          = "{name}{!para}{value}"
+    static let SMALL           = "{name} {value}"
+    static let LIST            = "{name}{!para}{value*}"
 
 public class TooltipStyle
     static IterableMap<string, string> BASIC = new IterableMap<string, string>()
@@ -57,11 +55,21 @@ public class TooltipStyle
     static IterableMap<string, string> EXTENDED = new IterableMap<string, string>()
         ..put("name"      , "<c em>{name}</c>:")
         ..put("value"     , "{value}")
-        ..put("value+"    , "<c em>|{value+}|</c>")
-        ..put("value-"    , "<c #CCCCCC>|{value-}|</c>")
+        ..put("value+"    , "{value+}")
+        ..put("value-"    , "<c #7A7A7A>{value-}</c>")
         ..put("!indent"   , "    ")
         ..put("!para"     , "|n    ")
-        ..put("!sep"     , "/")
+        ..put("!sep"     , "<c #CCCCCC>/</c>")
+
+    static IterableMap<string, string> DEC2 = EXTENDED.clone()
+        ..put("value", "<dec>{value}</dec>")
+        ..put("value+", "<dec 2>{value+}</dec>")
+        ..put("value-", "<c #7F7F7F><dec 2>{value-}</dec></c>")
+
+    static IterableMap<string, string> DEC1 = EXTENDED.clone()
+        ..put("value", "<dec>{value}</dec>")
+        ..put("value+", "<dec 2>{value+}</dec>")
+        ..put("value-", "<c #7F7F7F><dec 2>{value-}</dec></c>")
 
 public class StringSeparator
     static let NONE = ""
@@ -230,6 +238,9 @@ public class TooltipFragment
         fields.put(key, values.joinBy(separator))
         destroy values
 
+    function setListField(string key, List<string> values)
+        setListField(key, values, "{!para}")
+
     /** Adds a level-dependant string-based field. */
     function setLvlField(string key, List<string> values, string separator)
         for lvl=1 to parent.levels 
@@ -246,6 +257,9 @@ public class TooltipFragment
             
             
             destroy list
+
+    function setLvlField(string key, List<string> values)
+        setLvlField(key, values, "{!sep}")
 
     /** Adds a level-dependant real-based field. */
     function setLvlField(string key, RealLevelClosure rlc, string separator)
@@ -318,6 +332,12 @@ public class TooltipFragment
 
 /* HELPER FUNCTIONS */
 
+public function TooltipFragment.setName(string val)
+    this.setField("name", val)
+
+public function TooltipFragment.setValue(string val)
+    this.setField("value", val)
+
 function RealLevelClosure.toStringList(int levels) returns List<string>
     let list = new List<string>
     list.add("PLACEHOLDER")
@@ -340,31 +360,32 @@ function StringLevelClosure.toStringList(int levels) returns List<string>
     return list
 
 @Test function test()
-    print("                                       ")
+    if false 
+        print("                                       ")
 
-    let tip = new Tooltip()..setLevels(5) 
-    tip.getBasicFragment()
-        ..setField("hotkey", "Q")
-        ..setField("action", "Upgrade to")
-        ..setField("name", "This building")
+        let tip = new Tooltip()..setLevels(5) 
+        tip.getBasicFragment()
+            ..setField("hotkey", "Q")
+            ..setField("action", "Upgrade to")
+            ..setField("name", "This building")
 
-    tip.addFragment()
-        ..setField("name", "This")
-        ..setLvlField("value", (int lvl) -> lvl * 3)
-        ..setTemplate("{name} ({lvl}/{lvls}){!para}{value}")
-        ..setPriority(1)
+        tip.addFragment()
+            ..setField("name", "This")
+            ..setLvlField("value", (int lvl) -> lvl * 3)
+            ..setTemplate("{name} ({lvl}/{lvls}){!para}{value}")
+            ..setPriority(1)
 
-    tip.addFragment()
-        ..setLevelModifier(1)
-        ..setField("name", "Next")
-        ..setLvlField("value", (int lvl) -> lvl * 3)
-        ..setTemplate("{name} ({lvl}/{lvls}){!para}{value}")
-        ..setPriority(2)
+        tip.addFragment()
+            ..setLevelModifier(1)
+            ..setField("name", "Next")
+            ..setLvlField("value", (int lvl) -> lvl * 3)
+            ..setTemplate("{name} ({lvl}/{lvls}){!para}{value}")
+            ..setPriority(2)
 
-    for i=1 to tip.levels 
-        print("----------------------------------------")
-        //print(tip.getBasicTip(i))
-        nullTimer(() -> print(tip.getExtendedTip(i).replace("|n", "\n")))
+        for i=1 to tip.levels 
+            print("----------------------------------------")
+            //print(tip.getBasicTip(i))
+            nullTimer(() -> print(tip.getExtendedTip(i).replace("|n", "\n")))
 
 init
     test()

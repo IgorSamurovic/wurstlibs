@@ -18,6 +18,12 @@ public class IterableMap<K,V> extends HashMap<K, V>
 	override function has(K key) returns bool
 		return keys.contains(key)
 
+	function clone() returns IterableMap<K, V>
+		let map = new IterableMap<K, V>
+		for key in this
+			map.put(key, get(key))
+		return map
+
  	/** Saves the given value under the given key */
 	override function put(K key, V value)
  	 	super.put(key, value)
@@ -29,6 +35,9 @@ public class IterableMap<K,V> extends HashMap<K, V>
 		super.remove(key)
  	 	if keys.contains(key)
  	 	 	keys.remove(key)
+
+	function getKeys() returns LinkedList<K>
+		return keys
 
  	ondestroy
  	 	destroy keys

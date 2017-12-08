@@ -60,7 +60,7 @@ public class ColorSet
         new ColorSet("human")
         ..add("em"    , 0, 0, 255)
 
-        TagRegistry.DEFAULT..add("c", false, (JTMLElement e) -> ColorSet.find(e.firstAttribute()) + e.getText() + "|r")
+        TagRegistry.DEFAULT..add("c", false, (JTMLElement e) -> ColorSet.find(e.getAttr(0)) + e.getText() + "|r")
 
 init
     ColorSet.initialize()

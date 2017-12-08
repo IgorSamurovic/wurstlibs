@@ -12,6 +12,7 @@ constant VALUE_ASSOCIATOR = "="
 constant QUOTATION_MARK   = "\""
 
 public class TagRegistry
+
     static constant let DEFAULT = new TagRegistry()
     static constant let DOM = new TagTemplate("DOM", false, (JTMLElement e) -> e.text)
 
@@ -35,6 +36,19 @@ public class TagRegistry
         ..add("br", true, (JTMLElement e) -> "|n")
         ..add("upper", false, (JTMLElement e) -> e.text.toUpperCase())
         ..add("lower", false, (JTMLElement e) -> e.text.toLowerCase())
+        ..add("dec", false, (JTMLElement e) -> begin
+            string val = e.text
+            var decimals = e.getAttr(0).toInt()
+            let index = e.text.indexOf(".")
+            if index != -1
+                let endindex = index + decimals + 1
+                var maxIndex = val.length()
+                while endindex > maxIndex
+                    val += "0"
+                    maxIndex++ 
+                val = val.substring(0, IMinBJ(endindex, maxIndex))
+            return val
+        end)
         ..add("spaceout", false, (JTMLElement e) -> begin
             string val = ""
             var num = e.attr.get("num").toInt()
@@ -67,14 +81,23 @@ public class JTMLElement
     protected string text
     protected IterableMap<string, string> attr
 
-    function firstAttribute() returns string
-        return attr.staticItr().next()
+    /** Returns the value of an attribute at a specific position. */
+    function getAttr(int index) returns string
+        if index < attr.getKeys().getSize()
+            return attr.getKeys().get(index)
+        else
+            return ""
 
+    /** Returns the value of an attribute with a specific name. */
+    function getAttr(string name) returns string
+        if attr.has(name)
+            return attr.get(name)
+        else
+            return ""
+
+    /** Returns the text to be processed by this tag. */
     function getText() returns string
         return text
-
-    function getAttr() returns IterableMap<string, string>
-        return attr
 
     function process(TagRegistry tagRegistry) returns string
         text = text.process(tagRegistry)
@@ -245,15 +268,13 @@ public function string.process() returns string
 init
     nullTimer(()-> test())
 
-public function string.r(string key, string value) returns string
-    return this.replace("{" + key + "}", value)
+public function string.replaceAll(IterableMap<string, string> map) returns string
+    var retVal = this
+    for key in map
+        retVal = retVal.replace("{" + key + "}", map.get(key))
+    return retVal
 
-public function string.r(string key, LinkedList<string> values, string separator) returns string
-    return this.replace("{" + key + "}", values.joinBy(separator))
-
-public function string.r(string key, LinkedList<string> values) returns string
-    return this.r(key, values, ", ")
-
+/* Remove from JTML */
 public function string.getAllTemplateFields() returns LinkedList<string>
     let list = new LinkedList<string>
     
@@ -273,8 +294,13 @@ public function string.getAllTemplateFields() returns LinkedList<string>
     destroy starts
     return list
 
-public function string.format(IterableMap<string, string> map) returns string
-    string newString = this
-    for key in map
-        newString = newString.replace("{" + key + "}", map.get(key))
-    return newString
+public function string.r(string key, string value) returns string
+    return this.replace("{" + key + "}", value)
+
+public function string.r(string key, LinkedList<string> values, string separator) returns string
+    return this.replace("{" + key + "}", values.joinBy(separator))
+
+public function string.r(string key, LinkedList<string> values) returns string
+    return this.r(key, values, ", ")
+
+

@@ -6,25 +6,3 @@ public function string.toId() returns int
 
 public function int.toFourChar() returns string
     return int2fourchar(this)
-
-constant numberset = "0123456789"
-constant numbersetlength = numberset.length()
-
-function powInt(int x, int power) returns int
-    var ret = 1
-    for i=1 to power
-        ret *= x
-    return ret
-
-public function string.toSafeInt() returns int
-	int result = 0
-	int len = this.length()
-	for i = len downto 1 
-		for j = 0 to numbersetlength - 1
-			if numberset.substring(j, j+1) == this.substring(i-1, i)
-				result += j * powInt(10, (len - i)*1)
-				break
-	if this.startsWith("-")
-		result = -result
-			
-	return result
