@@ -1,7 +1,2 @@
 ---
 projectName: "DefaultName"
-dependencies: []
-buildMapData:
-  name: "DefaultName"
-  fileName: "test"
-  author: "DefaultAuthor"
