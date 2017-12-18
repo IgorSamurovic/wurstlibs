@@ -5,6 +5,10 @@ import HashMap
 public module MapModule<Z>
     protected static let zzz_map = new HashMap<Z, thistype>()
     protected Z mapRef 
+    protected bool _hasRef = false
+
+    function hasRef() returns bool
+        return _hasRef
 
     static function of(Z t) returns thistype
         return zzz_map.get(t)
@@ -12,6 +16,11 @@ public module MapModule<Z>
     function attachTo(Z t)
         mapRef = t
         zzz_map.put(t, this)
+        _hasRef = true
+
+    function detachFromRef()
+        zzz_map.remove(mapRef)
+        _hasRef = false
 
     ondestroy
-        zzz_map.remove(mapRef)
+        detachFromRef()

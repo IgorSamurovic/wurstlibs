@@ -1,6 +1,6 @@
 package IterableMap 
-import LinkedList
-import HashMap
+import public LinkedList
+import public HashMap
 
 import public TypeCasting
 import public Table

@@ -1,0 +1,28 @@
+package PlayerInstance
+
+/** Makes it possible to attach a class to a player easily. */
+module PlayerInstance
+    protected static thistype array zzz_player_inst
+
+    private player owningPlayer = null
+
+    function getOwningPlayer() returns player
+        return owningPlayer
+
+    /** Returns the instance associated with a player 
+        Returns null if it has not been initialized. */
+    static function of(player p) returns thistype
+        return zzz_player_inst[p.getId()]
+
+    /** Attaches this instance to a player. */
+    function attachTo(player p)
+        zzz_player_inst[p.getId()] = this
+        this.owningPlayer = p
+
+    /** Detaches this instance from a player. */
+    function detachFromPlayer()
+        zzz_player_inst[owningPlayer.getId()] = null
+        this.owningPlayer = null
+
+    ondestroy
+        detachFromPlayer()

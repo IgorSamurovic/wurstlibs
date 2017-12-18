@@ -1,0 +1,34 @@
+package MapListModule
+
+import TypeCasting
+import HashMap
+import LinkedList
+
+public module MapModule<Z>
+    protected static let zzz_map = new HashMap<Z, LinkedList<thistype>>()
+    protected Z mapRef 
+
+    static function of(Z t) returns LinkedList<thistype>
+        return zzz_map.get(t)
+
+    static function getOneOf(Z t) returns thistype
+        thistype ret
+        let list = zzz_map.get(t)
+        if list != null
+            ret = list.get(0)
+        else
+            ret = null
+        return ret
+        
+    function attachTo(Z t)
+        mapRef = t
+        var list = zzz_map.get(t)
+        if list == null
+            list = new LinkedList<thistype>
+            zzz_map.put(t, list)
+        list.add(this)
+
+    ondestroy
+        let list = zzz_map.get(mapRef)
+        if list != null
+            list.remove(this)
