@@ -1,6 +1,12 @@
 package StringExtension
 import ObjectIds
 
+public function print(vec2 pos)
+    print("X, Y = ({0}, {1})".format(pos.x.toString(), pos.y.toString()))
+
+public function print(vec3 pos)
+    print("X, Y, Z = ({0}, {1}, {2})".format(pos.x.toString(), pos.y.toString(), pos.z.toString()))
+
 public function string.toId() returns int
     return fourchar2int(this)
 

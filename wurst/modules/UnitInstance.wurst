@@ -1,0 +1,53 @@
+package UnitInstance
+import UnitIndexer
+
+/** Makes it possible to attach a class to a unit easily. */
+public module UnitInstance
+    protected static thistype array zzz_unit_inst
+
+    private unit owningUnit = null
+
+    function getOwningUnit() returns unit
+        return owningUnit
+
+    /** Returns the instance associated with a unit. 
+        Returns null if it has not been initialized. */
+    static function of(unit u) returns thistype
+        return zzz_unit_inst[u.getIndex()]
+
+    /** Attaches this instance to a player. */
+    function attachTo(unit u)
+        zzz_unit_inst[u.toUnitIndex().getIndex()] = this
+        this.owningUnit = u
+
+    /** Detaches this instance from a player. */
+    function detachFromUnit()
+        zzz_unit_inst[owningUnit.getIndex()] = null
+        this.owningUnit = null
+
+    ondestroy
+        detachFromUnit()
+
+    /** Implements what to do once the unit is indexed. */
+    static function initUnitInstance(unit u)
+
+    /** Makes the class automatically acquir enew instances/destroy old ones
+        on unit index/deindex. */
+    static function zzz_UnitInstanceInit() returns bool
+        onUnitIndex(() -> begin 
+            initUnitInstance(getIndexedUnit())
+        end)
+        onUnitDeindex(() -> begin 
+            let inst = of(getDeindexedUnit())
+            if inst != null
+                destroy inst
+        end)
+        return true
+
+    static constant zzz_initUnitInstance = zzz_UnitInstanceInit()
+
+class UnitInstanceExample
+    use UnitInstance
+
+    override static function initUnitInstance(unit u)
+        new UnitInstanceExample()..attachTo(u)

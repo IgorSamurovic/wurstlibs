@@ -1,4 +1,6 @@
 package BatchProcessing
+import ClosureTimers
+import TimerUtils
 
 public module BatchProcessing
 	static thistype zz__first = null
@@ -7,8 +9,17 @@ public module BatchProcessing
 	thistype zz__prev
 	thistype zz__next
 
-	abstract function process()
+	protected static timer zz__timer = getTimer() 
+	protected static real TIMEOUT = 1.0
+	protected static bool running = false
 
+	function getTimeout() returns real
+		return TIMEOUT
+
+	/** A function that is called to process every instance in the loop. */
+	function process()
+
+	/** A function called by the timer to process all instances. */
 	static function processAll()
 		var obj = zz__first
 		while obj != null
@@ -37,3 +48,16 @@ public module BatchProcessing
 			zz__next.zz__prev = zz__prev	
 		else
 			zz__last = zz__prev
+
+	static function start(real timeout) returns bool
+		zz__timer 
+			..startPeriodic(timeout, function processAll)
+		return true
+		
+	static function start()
+		zz__timer 
+			..startPeriodic(TIMEOUT, function processAll)
+
+	static function stop()
+		zz__timer 
+			..pause()

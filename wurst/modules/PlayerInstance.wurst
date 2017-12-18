@@ -1,15 +1,26 @@
 package PlayerInstance
 
+player array playerArray
+
+init
+    for i=0 to 15
+        playerArray[i] = Player(i)
+
 /** Makes it possible to attach a class to a player easily. */
-module PlayerInstance
+public module PlayerInstance
     protected static thistype array zzz_player_inst
+
+    static thistype localInstance = null
+
+    static function getLocalInstance() returns thistype
+        return localInstance
 
     private player owningPlayer = null
 
     function getOwningPlayer() returns player
         return owningPlayer
 
-    /** Returns the instance associated with a player 
+    /** Returns the instance associated with a player.
         Returns null if it has not been initialized. */
     static function of(player p) returns thistype
         return zzz_player_inst[p.getId()]
@@ -18,11 +29,33 @@ module PlayerInstance
     function attachTo(player p)
         zzz_player_inst[p.getId()] = this
         this.owningPlayer = p
+        if p == GetLocalPlayer()
+            localInstance = this
 
     /** Detaches this instance from a player. */
     function detachFromPlayer()
         zzz_player_inst[owningPlayer.getId()] = null
+        if this.owningPlayer == GetLocalPlayer()
+            localInstance = null
         this.owningPlayer = null
 
     ondestroy
         detachFromPlayer()
+
+    /** Implements what to do once the unit is indexed. */
+    abstract static function initPlayerInstance(player p)
+
+    /** Makes the class automatically initialize. */
+    static function zzz_PlayerInstanceInit() returns bool
+        for i=0 to 15
+            initPlayerInstance(playerArray[i])
+        return true
+
+    static constant zzz_initUnitInstance = zzz_PlayerInstanceInit()
+
+public class PlayerInstanceExample
+    use PlayerInstance
+
+    override static function initPlayerInstance(player p)
+        if p.getId() <= 11
+            new PlayerInstanceExample()..attachTo(p)
