@@ -1,6 +1,7 @@
 package Hotkey
 import LinkedListModule
 import AbilityObjEditing
+import ItemObjEditing
 
 public function AbilityDefinition.setHotkey(Hotkey hotkey)
     this
@@ -8,7 +9,12 @@ public function AbilityDefinition.setHotkey(Hotkey hotkey)
     ..setButtonPositionNormalX(hotkey.x)
     ..setButtonPositionNormalY(hotkey.y)
 
-    
+public function ItemDefinition.setHotkeyObject(Hotkey hotkey)
+    this
+    ..setHotkey(hotkey.getChar())
+    ..setButtonPositionX(hotkey.x)
+    ..setButtonPositionY(hotkey.y)
+
 public class Hotkey
     use LinkedListModule
     

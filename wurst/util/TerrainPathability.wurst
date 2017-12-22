@@ -1,0 +1,64 @@
+package TerrainPathability
+import UnitObjEditing
+import ObjectIdGenerator
+import StringExtension
+
+let ITEM_ID = compiletime(ITEM_ID_GEN.next())
+let GROUND_ID = compiletime(UNIT_ID_GEN.next())
+let FLY_ID = compiletime(UNIT_ID_GEN.next())
+let WATER_ID = compiletime(UNIT_ID_GEN.next())
+
+item ITEM
+unit GROUND_UNIT
+unit FLY_UNIT
+unit WATER_UNIT
+
+let heaven = vec2(3000, 3000)
+
+@compiletime function initialize()
+    new UnitDefinition(GROUND_ID, 'hpea')
+        ..setCollisionSize(0)
+
+    new UnitDefinition(FLY_ID, 'hpea')
+        ..setCollisionSize(8)
+        ..setMovementType(MovementType.Fly)
+        ..setSelectionScale(0)
+
+    new UnitDefinition(WATER_ID, 'hpea')
+        ..setCollisionSize(0)
+        ..setMovementType(MovementType.Float)
+    
+init 
+    ITEM = createItem('afac', heaven)
+    GROUND_UNIT = createUnit(Player(15), GROUND_ID, heaven, angle(0))
+    FLY_UNIT = createUnit(Player(15), FLY_ID, heaven, angle(0))
+    WATER_UNIT = createUnit(Player(15), WATER_ID, heaven, angle(0))
+
+public function isPosGroundPathable(vec2 pos) returns bool
+    GROUND_UNIT.setPos(pos)
+    return GROUND_UNIT.getPos() == pos
+
+public function isPosGroundPathableIgnoreCollision(vec2 pos) returns bool
+    ITEM.setPos(pos)
+    return ITEM.getPos() == pos
+
+public function isPosFlyPathable(vec2 pos) returns bool
+    FLY_UNIT.setPos(pos)
+    
+    print(pos)
+    print(FLY_UNIT.getPos())
+    print(FLY_UNIT.getPos() == pos)
+    return FLY_UNIT.getPos() == pos
+
+public function isPosWaterPathable(vec2 pos) returns bool
+    WATER_UNIT.setPos(pos)
+    return WATER_UNIT.getPos() == pos
+
+public function isPosGroundPathableReset()
+    GROUND_UNIT.setPos(heaven)
+
+public function isPosFlyPathableReset()
+    FLY_UNIT.setPos(heaven)
+
+public function isPosWaterPathableReset()
+    WATER_UNIT.setPos(heaven)

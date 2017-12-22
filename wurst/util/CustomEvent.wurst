@@ -1,11 +1,11 @@
 package CustomEvent
 
 public module CustomEvent
-    private trigger trig = CreateTrigger()
+    private static trigger trig = CreateTrigger()
 
-    function register(code func)
+    static function register(code func)
         trig.addCondition(Filter(func))
     
-    function fire()
+    static function fire()
         trig.evaluate()
 

@@ -13,8 +13,7 @@ public module BatchProcessing
 	protected static real TIMEOUT = 1.0
 	protected static bool running = false
 
-	function getTimeout() returns real
-		return TIMEOUT
+	abstract static function getTimeout() returns real
 
 	/** A function that is called to process every instance in the loop. */
 	function process()
@@ -26,7 +25,11 @@ public module BatchProcessing
 			obj.process()
 			obj = obj.zz__next
 
-	construct()
+	construct() 
+		if zz__size == 0
+			print("START!")
+			start()
+			print("STARTED??")
 		zz__size++
 		if zz__size == 1
 			zz__first = this
@@ -48,13 +51,11 @@ public module BatchProcessing
 			zz__next.zz__prev = zz__prev	
 		else
 			zz__last = zz__prev
+		if zz__size == 0
+			stop()
 
-	static function start(real timeout) returns bool
-		zz__timer 
-			..startPeriodic(timeout, function processAll)
-		return true
-		
 	static function start()
+		print("STARTED?")
 		zz__timer 
 			..startPeriodic(TIMEOUT, function processAll)
 

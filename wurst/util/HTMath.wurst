@@ -1,0 +1,29 @@
+package HTMath
+
+/** Makes sure that the real angle stays in the 0-2*PI range. */
+public function angle.fix() returns angle
+    var ang = this.radians
+    while ang > PI2
+        ang -= PI2
+    while ang < 0
+        ang += PI2
+    return angle(ang)
+
+/* Fast Math */
+
+public function angle.degSin() returns real
+    return sin[this.degrees().toInt()]
+
+public function angle.degCos() returns real
+    return cos[this.degrees().toInt()]
+
+real array sin
+real array cos
+real array tan
+
+init
+    for i=0 to 360
+        let float = i.toReal()
+        sin[i] = Sin(float)
+        cos[i] = Cos(float)
+        tan[i] = Tan(float)

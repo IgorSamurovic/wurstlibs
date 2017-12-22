@@ -1,10 +1,5 @@
 package PlayerInstance
-
-player array playerArray
-
-init
-    for i=0 to 15
-        playerArray[i] = Player(i)
+import Players
 
 /** Makes it possible to attach a class to a player easily. */
 public module PlayerInstance
@@ -48,7 +43,7 @@ public module PlayerInstance
     /** Makes the class automatically initialize. */
     static function zzz_PlayerInstanceInit() returns bool
         for i=0 to 15
-            initPlayerInstance(playerArray[i])
+            initPlayerInstance(playerWithId(i))
         return true
 
     static constant zzz_initUnitInstance = zzz_PlayerInstanceInit()

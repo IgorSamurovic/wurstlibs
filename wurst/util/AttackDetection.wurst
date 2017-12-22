@@ -1,0 +1,59 @@
+package AttackDetection
+import DamageDetection
+import AbilityObjEditing
+import BuffObjEditing
+import ObjectIdFactory
+import StringExtension
+import UnitIndexer
+
+bool DETECTING_ATTACKS = true
+
+public function attackDetectionOff()
+    DETECTING_ATTACKS = false
+
+public function attackDetectionOn()
+    DETECTING_ATTACKS = true
+
+constant ABIL_ID = ABIL_GEN.next()
+constant BUFF1_ID = BUFF_GEN.next()
+constant BUFF2_ID = BUFF_GEN.next()
+
+constant trigger detect = CreateTrigger()
+unit attacked
+unit attacker
+
+public function getAttacked() returns unit
+    return attacked
+
+public function getAttacker() returns unit
+    return attacker
+
+public function onAttack(code func)
+    detect.addAction(func)
+
+@compiletime function initialize()
+    if compiletime
+        new AbilityDefinitionSlowPoison(ABIL_ID)
+            ..setButtonPositionNormalX(0)
+            ..setButtonPositionNormalY(-11)
+            ..setBuffs(1, BUFF1_ID.toFourChar() + "," + BUFF2_ID.toFourChar())
+        new BuffDefinition(BUFF1_ID, 'Bspo')
+        new BuffDefinition(BUFF2_ID, 'Bssd')
+    else
+        onUnitIndex(()-> getIndexedUnit().addAbility(ABIL_ID))  
+
+        addOnDamageFunc(Condition(()-> begin
+            if DETECTING_ATTACKS
+                let damaged = GetTriggerUnit() 
+                if damaged.hasAbility(BUFF1_ID) or damaged.hasAbility(BUFF2_ID)
+                    damaged.removeAbility(BUFF1_ID)
+                    damaged.removeAbility(BUFF2_ID)
+                    attacker = GetEventDamageSource()
+                    attacked = damaged
+                    detect.execute()
+                    attacker = null
+                    attacked = null
+        end))
+
+init
+    initialize()

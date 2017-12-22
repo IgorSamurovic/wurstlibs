@@ -1,0 +1,140 @@
+package Dummy360
+import UnitObjEditing
+import IterableMap
+import HTMath
+import ClosureTimers
+
+public class Dummy360Recycler
+    static constant DUMMY_ID = 'd360'
+    static constant CREATE_ON_START = 64
+    static constant RELEASE_DELAY = 3.0
+    static constant DUMMY_PLAYER = Player(14)
+
+    protected unit u = CreateUnit(DUMMY_PLAYER, DUMMY_ID, 0, 0, 0)..setPathing(false)
+    protected let effects = new IterableMap<string, effect>()
+
+    construct()
+        SetUnitBlendTime(u, 0)
+
+    /* API */
+
+    static function get() returns thistype
+        if stackcount > 0
+            return getFromStack()
+        else
+            return new Dummy360Recycler()
+
+    function release()
+        for path in effects
+            effects.get(path).destr()
+        doAfter(RELEASE_DELAY, () -> begin 
+            u..setXY(bj_mapInitialPlayableArea.getRightTop())..pause()..setScale(1)..setVertexColor(COLOR_WHITE)..setOwner(DUMMY_PLAYER, true)
+            addToStack(this)
+        end)
+
+    /* Stack stuff */
+
+    protected static thistype array stack
+    protected static var stackcount = 0
+
+    protected static function addToStack(thistype obj)
+        stack[stackcount] = obj
+        stackcount++
+
+    protected static function getFromStack() returns thistype
+        stackcount--
+        return stack[stackcount]
+
+
+public class Dummy360
+    Dummy360Recycler rec
+    protected angle facing = angle(0)
+    protected effect model = null
+
+    /* API */
+
+    function setFacing(real ang)
+        setFacing(angle(ang))
+
+    function setFacing(angle ang)
+        this.facing = ang.fix()
+        rec.u.setAnimation(120 - (this.facing.degrees()/3).toInt())
+
+    function getFacing() returns angle
+        return facing
+
+    function setPos(vec3 pos)
+        rec.u.setPosFly(pos)
+
+    function setPos(vec2 pos)
+        rec.u.setPos(pos)
+
+    function setPos(real x, real y)
+        rec.u.setPos(x, y)
+
+    function setZ(real z)
+        rec.u.setFlyHeight(z, 0.)
+
+    function addEffect(string path)
+        rec.effects.put(path, rec.u.addEffect(path, "origin"))
+
+    function removeEffect(string path)
+        if rec.effects.has(path)
+            let e = rec.effects.get(path)
+            e.destr()
+            rec.effects.remove(path)
+
+    function setModel(string path)
+        if model != null
+            model.destr()
+        model = rec.u.addEffect(path, "origin")
+
+    function getDummy() returns unit
+        return rec.u
+
+    construct()
+        rec = Dummy360Recycler.get()
+
+    ondestroy
+        if model != null
+            model.destr()
+        
+        rec.release()
+
+init
+    for i = 1 to Dummy360Recycler.CREATE_ON_START
+        new Dummy360Recycler()..release()
+
+// Compiletime block
+
+@compiletime function doCompiletimeStuff()
+    let u = new UnitDefinition(Dummy360Recycler.DUMMY_ID, 'ewsp')
+    ..setName("Effect Dummy Unit")
+    ..setMovementType(MovementType.Fly)
+    ..setUpgradesUsed("")
+    ..setStructuresBuilt("")
+    ..setManaRegeneration(0)
+    ..setManaInitialAmount(0)
+    ..setManaMaximum(0)
+    ..setCollisionSize(0.0)
+    ..setRace(Race.Commoner)
+    ..setFoodCost(0)
+    ..setArmorType(ArmorType.Divine)
+    ..setIconGameInterface("ReplaceableTextures\\CommandButtons\\BTNtemp.blp")
+    ..setSpeedBase(522)
+    ..setModelFile("dummy360.mdx")
+    ..setAnimationBlendTimeseconds(0.0)
+    ..setAnimationCastBackswing(0.0)
+    ..setMaximumPitchAngledegrees(0.0)
+    ..setMaximumRollAngledegrees(0.0)
+    ..setSpecial("")
+    ..setProjectileImpactZ(0.0)
+    ..setProjectileLaunchZ(0.0)
+    ..setNameEditorSuffix("(360)")
+    ..setSightRadiusDay(64) 
+    ..setSightRadiusNight(64)
+    ..setUnitClassification("_")
+    ..setPropulsionWindowdegrees(1.0)
+    ..setTooltipBasic("")
+    ..setNormalAbilities("Avul,Arav,Aloc") //,Aloc 
+    ..setSelectionScale(-1)

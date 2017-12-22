@@ -1,0 +1,10 @@
+package ObjectIdFactory
+import ObjectIdGenerator
+
+public constant UNIT_GEN = new IdGenerator('uZ00')
+public constant HERO_GEN = new IdGenerator('UX00')
+public constant ABIL_GEN = new IdGenerator('AZ00')
+public constant BUFF_GEN = new IdGenerator('BZ00')
+public constant ITEM_GEN = new IdGenerator('IZ00')
+public constant DEST_GEN = new IdGenerator('MZ00')
+

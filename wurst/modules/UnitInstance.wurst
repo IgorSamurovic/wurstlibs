@@ -7,6 +7,7 @@ public module UnitInstance
 
     private unit owningUnit = null
 
+    /** Returns the unit associated with this instance */
     function getOwningUnit() returns unit
         return owningUnit
 
@@ -46,8 +47,9 @@ public module UnitInstance
 
     static constant zzz_initUnitInstance = zzz_UnitInstanceInit()
 
+/*
 class UnitInstanceExample
     use UnitInstance
 
     override static function initUnitInstance(unit u)
-        new UnitInstanceExample()..attachTo(u)
+        new UnitInstanceExample()..attachTo(u) */

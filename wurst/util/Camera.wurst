@@ -1,0 +1,42 @@
+package Camera
+import PlayerInstance
+import BatchProcessing
+import ClosureTimers
+
+public class Camera
+    use PlayerInstance
+
+    static let TIMEOUT = 0.1
+
+    function getTargetPos() returns vec2
+        var ret = vec2(0, 0)
+        if lockUnit != null
+            ret = lockUnit.getPos()
+        return ret
+
+    protected bool locked = false
+    protected unit lockUnit = null
+
+    function lock(unit u)
+        locked = true
+        lockUnit = u
+        
+    function unlock()
+        locked = false
+        lockUnit = null
+        if this == localInstance
+            SetCameraTargetController(null, 0, 0, false)
+
+    static function onLoop()
+        if localInstance.locked
+            SetCameraTargetController(localInstance.lockUnit, 0, 0, false)
+
+    override static function initPlayerInstance(player p)
+        if p.isIngame()
+            new Camera(p)
+        
+    construct(player p)
+        attachTo(p)
+
+init
+    doPeriodically(Camera.TIMEOUT, (CallbackPeriodic cb)-> Camera.onLoop())

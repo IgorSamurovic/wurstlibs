@@ -223,10 +223,13 @@ public class TooltipFragment
     /* Field manipulation */
 
     function applyStyle(string key, string value) returns string
-        var styleString = style.get(key)
-        if styleString == ""
-            styleString = "{" + key + "}"
-        return styleString .r(key, value)
+        if style.has(key)
+            var styleString = style.get(key)
+            if styleString == ""
+                styleString = "{" + key + "}"
+            return styleString .r(key, value)
+        else
+            return key
 
     function setField(string key, string value)
         fields.put(key, applyStyle(key, value))
@@ -305,11 +308,12 @@ public class TooltipFragment
                 destroy templateList
                 break
             for field in templateList 
-                var fieldVal =fields.get(field + suffix)
+                if fields.has(field + suffix)
+                var fieldVal = fields.has(field + suffix) ? fields.get(field + suffix) : ""
                 if fieldVal == ""
-                    fieldVal = fields.get(field) 
+                    fieldVal = fields.has(field) ? fields.get(field) : "" 
                 if fieldVal == ""
-                    fieldVal = style.get(field)
+                    fieldVal = style.has(field) ? style.get(field) : ""
                 processed = processed.r(field, fieldVal)
             destroy templateList
 

@@ -1,0 +1,38 @@
+package Players
+import LinkedList
+import TypeCasting
+
+player array playerArray
+
+public function playerWithId(int id) returns player
+    return playerArray[id]
+
+init
+    for i=0 to 15
+        playerArray[i] = Player(i)
+
+
+let all = new LinkedList<player>()
+
+public function trigger.registerAnyPlayerEvent(playerevent pe)
+    for i = 0 to 15
+        this.registerPlayerEvent(Player(i), pe)
+
+public function trigger.registerAnyPlayerChatEvent()
+    for i = 0 to 15
+        this.registerPlayerChatEvent(playerWithId(i), "", false)
+
+public function allPlayingPlayers() returns LinkedList<player>
+    return all
+
+init
+    let detect = CreateTrigger()
+        ..addAction(() -> begin
+            all.remove(GetTriggerPlayer())
+        end)
+        
+    for i = 0 to 11
+        let p = Player(i)
+        if p.isIngame()
+            all.add(p)
+            TriggerRegisterPlayerEvent(detect, p, EVENT_PLAYER_LEAVE)
