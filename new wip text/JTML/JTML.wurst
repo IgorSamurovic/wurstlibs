@@ -1,0 +1,338 @@
+package JTML
+import IterableMap
+import StringUtils 
+import ClosureTimers
+import LinkedListModule
+
+/*  JTML
+
+    by HT
+
+    JML starts for JassTextMarkupLanguage.
+
+    Warcraft III doesn't support many features of HTML or CSS. However, that doesn't mean that
+    string processing in Wc3 is useless, in fact, with the inclusion of object data editing tools
+    in Wurst, text processing is fairly useful. So, what does JTML allow you to do?
+
+    Simply put, JTML allows you to define XML-like tags, then process them the way you define.
+    Here are some examples:
+
+    JTML                           OUTPUT
+    <repeat num=3>text</repeat>    texttexttext
+    <spaceout num=2>text</text>    t  e  x  t
+    [<c em>Q</c>]                  [|cffffcc00Q|r]
+    <upper>tExT</upper>            TEXT
+    <lower>TexT</lower>            text
+    <capital>teXt</capital>        Text
+    <dec 3>0.03556754</dec>        0.035
+
+    Strings are processed by calling string.process(). If you have defined a new TagLibrary, you can
+    call string.process(TagLibrary) to use it instead of the default one, which you can still add tags to.
+
+    There are multiple ways to further customize a JTML element,
+    as well as access the customizations.
+
+    IDEA                          JTML              CODE              RETURNS       NOT FOUND RETURN
+    1) Using a name-value pair    <repeat num=5>    e.getAttr("num")  string "5"    value  ""
+    2) Using flags                <int pos>         e.hasAttr("pos")  bool   true   false
+    3) Using attribute positions  <rgb 255 127 63>  e.getAttr(1)      string "127"  ""
+
+
+ */
+
+
+/** Contains a global tag registry stack */
+public class GlobalTagRegistry extends TagRegistry
+    use LinkedListModule
+
+    /** Searches for a named tag template, returns the basic one if not found */
+    protected static function findTagGlobally(string name) returns TagTemplate
+        TagTemplate result = null
+        for registry from staticBackItr()
+            result = registry.findTag(name)
+            if result != null
+                break
+        if result == null 
+            result = DOM
+        return result
+
+/** A class containing everything about tags */
+public class TagRegistry
+    protected static constant let DOM = new TagTemplate("DOM", false, (JTMLElement e) -> e.text)
+
+    let templates = new IterableMap<string, TagTemplate>()
+
+    /** Returns a map that maps tag name to its template */
+    function getMap() returns  IterableMap<string, TagTemplate> 
+        return templates
+
+    /** Searches for a named tag template, returns the basic one if not found */
+    function findTag(string name) returns TagTemplate
+        let lowerName = name.toLowerCase()
+        var result = templates.get(lowerName)
+        if result == null
+            result = GlobalTagRegistry.findTagGlobally(name)
+            if result == null
+                result = DOM
+
+        return result
+
+    /** Adds a tag template to the registry */
+    function add(TagTemplate tagTemplate)
+        templates.put(tagTemplate.name.toLowerCase(), tagTemplate)
+        
+    /** Creates a tag template with parameters and adds it to the registry */
+    function add(string name, bool empty, JTMLElementClosure closure)
+        templates.put(name.toLowerCase(), new TagTemplate(name, empty, closure))
+
+    function processText(string text) returns string
+        return ""//text.process(this)
+
+
+    @compiletime static function initialize()
+        new GlobalTagRegistry()
+        ..add(DOM)
+        ..add("br", true, (JTMLElement e) -> "|n")
+        ..add("upper", false, (JTMLElement e) -> e.text.toUpperCase())
+        ..add("lower", false, (JTMLElement e) -> e.text.toLowerCase())
+        ..add("dec", false, (JTMLElement e) -> begin
+            string val = e.text
+            var decimals = e.getAttr(0).toInt()
+            let index = e.text.indexOf(".")
+            if index != -1
+                let endindex = index + decimals + 1
+                var maxIndex = val.length()
+                while endindex > maxIndex
+                    val += "0"
+                    maxIndex++ 
+                val = val.substring(0, IMinBJ(endindex, maxIndex))
+            return val
+        end)
+        ..add("spaceout", false, (JTMLElement e) -> begin
+            string val = ""
+            var num = e.attr.get("num").toInt()
+            if num == 0
+                num = 1
+            var addon = ""
+            for i=1 to num
+                addon += " "
+            for i=0 to e.text.length() -1
+                if i != e.text.length() -1
+                    let tag = e.text.substring(i, i + 2)
+                    if tag == "|c"
+                        val += e.text.substring(i, i + 9)
+                        i += 8
+                    else if tag == "|r" or tag == "|n"
+                        val += tag
+                        i += 2
+                    else 
+                        val += e.text.charAt(i)
+                        if i != e.text.length() - 1 
+                            val += addon
+            return val
+        end)
+
+init
+    TagRegistry.initialize()
+
+public class JTMLElement
+    protected TagTemplate tagTemplate
+    protected string text
+    protected IterableMap<string, string> attr
+
+    /** Returns the value of an attribute at a specific position. */
+    function getAttr(int index) returns string
+        if index < attr.getKeys().getSize()
+            return attr.getKeys().get(index)
+        else
+            return ""
+
+    /** Returns the value of an attribute with a specific name. */
+    function getAttr(string name) returns string
+        return attr.get(name)
+
+    /** Returns the value of an attribute with a specific name. */
+    function hasAttr(string name) returns bool
+        return attr.has(name)
+
+    /** Returns the text to be processed by this tag. */
+    function getText() returns string
+        return text
+
+    /** Processes the element with a tag registry, then calls a function on it */
+    function process(TagRegistry tagRegistry) returns string
+        text = text.process(tagRegistry)
+        return tagTemplate.closure.run(this)
+
+    construct(TagTemplate tagTemplate, IterableMap<string, string> attr, string text)
+        this.tagTemplate = tagTemplate
+        this.attr = attr
+        this.text = text
+
+    ondestroy
+        if attr != null
+            destroy attr
+
+public interface JTMLElementClosure
+    function run(JTMLElement e) returns string
+
+public class TagTemplate
+    protected string name
+    protected bool empty
+    protected JTMLElementClosure closure
+
+    function getName() returns string
+        return name
+
+    construct(string name, bool empty, JTMLElementClosure closure)
+        this.name = name
+        this.empty = empty
+        this.closure = closure
+
+class Tag
+    protected TagTemplate template
+    protected string text = ""
+    protected string name = ""
+    protected bool ending = false
+    
+    let attr = new IterableMap<string, string>()
+
+    function needsClose() returns bool
+        return not ending and template.empty
+
+    construct(TagRegistry registry, string content)
+        text = content
+
+        let splittext = text.split(" ")
+        let iter = splittext.iterator()
+        
+        let first = iter.next().trim()
+        if first == CLOSING_TAG
+            ending = true 
+            name = iter.next()
+        else if first.startsWith(CLOSING_TAG)
+            ending = true
+            name = first.replace(CLOSING_TAG, "")
+        else
+            name = first
+
+        if registry != null
+            template = registry.findTag(name)
+        else
+            template = GlobalTagRegistry.findTagGlobally(name)
+
+        if template != TagRegistry.DOM
+            for str from iter
+                if str != "" and str != " "
+                    if str.contains(VALUE_ASSOCIATOR)
+                        str = str.replace(" ", "")
+                        let split = str.split(VALUE_ASSOCIATOR)
+                        attr.put(split.get(0).trim(), split.get(1).replace(QUOTATION_MARK, "").trim())
+                        destroy split
+                    else
+                        attr.put(str.trim(), "")
+        
+        iter.close()
+        destroy splittext
+
+
+/* <DOM>                                                                       </DOM>
+        <c em>                                       </c> lol <c em>       </c>
+              Some shit                        there                 stuff
+                        <c gh>             </c>
+                              someo <br> sh
+
+*/
+
+constant BRACKET_OPEN     = "<"
+constant BRACKET_CLOSED   = ">"
+constant ESCAPE_CHAR      = "\\"
+constant CLOSING_TAG      = "/"
+constant VALUE_ASSOCIATOR = "="
+constant QUOTATION_MARK   = "\""
+
+function char.isWhitespace() returns bool
+    return this.c == ' ' or this.c == '\n' or this.c == '\t'
+
+function char.isNumber() returns bool
+    return this.c >= '0' and this.c <= '9'
+
+function char.isAlphabetical() returns bool
+    return this.c >= 'A' and this.c <= 'z'
+
+function char.isAlphanumberic() returns bool
+    return this.isNumber() or this.isAlphabetical() or this.c == '_'
+
+function char.isTokenChar() returns bool
+    return this.c == '<'
+        or this.c == '>'
+        or this.c == '='
+        or this.c == '''
+        or this.c == '/'
+        or this.c == '.'
+
+function string.asChar() returns char
+    return char(StringHash(this))
+
+abstract class Processor
+    static string text
+    static TagRegistry registry
+    static int c
+    static char char
+    static string str
+    static int textLength 
+    static int textLastId
+    static int array textChars 
+    static string current
+    static string rawStart
+    static function reset()
+        textLength = text.length()
+        textLastId = textLength - 1
+
+        c = -1
+        char = char(0)
+        str = ""
+
+    static function strAt(int id) returns string
+        return text.charAt(id)
+
+    static function next()
+        c++
+        current = strAt(c)
+
+    static function prev()
+        c--
+        current = strAt(c)
+
+    static function at(int pos) returns string
+        return text.charAt(pos)
+
+    static function eof() returns bool
+        return c >= textLength
+
+    static function skipWhitespace()
+        while current == " " and not eof()
+            next()
+
+            if current == "<"
+
+    static function process(TagRegistry inRegistry, string inputText)
+        text = inputText
+        registry = inRegistry
+
+        reset()
+
+        while not eof()
+            next()
+
+
+
+/** Replaces a {key} field with a value */
+public function string.r(string key, string value) returns string
+    return this.replace("{" + key + "}", value).format("")
+
+public function string.process(TagRegistry tr) returns string
+    return ""
+
+public function string.process() returns string
+    return ""

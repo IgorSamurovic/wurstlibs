@@ -1,0 +1,415 @@
+package Tooltip
+import List
+import public Hotkey
+import StringUtils
+import AbilityObjEditing
+import IterableMap
+import ColorSet
+import JTML
+import ClosureTimers
+
+init
+
+/* PROCESSING CHAIN */
+/*
+    1) Input a value into the tooltip
+    2) The value is processed with the appropriate style (or none if none found)
+    3) The value is added to the fields list, with an appended level if needed
+    4) Once the tooltip is requested, the template is filled with field values for the appropriate level
+*/
+
+/* Advanced Tooltip Generator 
+        by HT
+
+        Advanced Tooltip Generator is a package designed to aid one in creating fancy looking tooltips in a quick
+    and consistent fashion, with the ability to quickly and easily change the way they look should one decide
+    to change the tooltip style.
+
+    So, how does Advanced Tooltip Generator (ATG from now on) work?
+
+    ATG lets you use templates and styles in order to easily format your tooltips and fill them with data.
+
+    Templates are just strings that define the positioning of elements. You can use {braces} to define 
+    where your replaceable data is going to be positioned, and fill any text in between as you like.
+
+    Styles are IterableMap<string, string> objects that define how an object is transformed before it is
+    processed, this allows us to format what we want each element to look like.
+
+*/
+
+public class TooltipTemplate
+    static let BASIC   = "{hotkey} {action} {name} {level}"
+
+    static let NONE            = "{value}"
+    static let NORMAL          = "{name}{!para}{value}"
+    static let SMALL           = "{name} {value}"
+    static let LIST            = "{name}{!para}{value*}"
+
+public class TooltipStyle
+    static IterableMap<string, string> BASIC = new IterableMap<string, string>()
+        ..put("hotkey", "[<c em>{hotkey}</c>]")
+        ..put("level" , "[<c em>Level {lvl}/{lvls}</c>]")
+        
+    static IterableMap<string, string> EXTENDED = new IterableMap<string, string>()
+        ..put("name"      , "<c em>{name}</c>:")
+        ..put("value"     , "{value}")
+        ..put("value+"    , "{value+}")
+        ..put("value-"    , "<c #7A7A7A>{value-}</c>")
+        ..put("!indent"   , "    ")
+        ..put("!para"     , "|n    ")
+        ..put("!sep"     , "<c #CCCCCC>/</c>")
+
+    static IterableMap<string, string> DEC2 = EXTENDED.clone()
+        ..put("value", "<dec>{value}</dec>")
+        ..put("value+", "<dec 2>{value+}</dec>")
+        ..put("value-", "<c #7F7F7F><dec 2>{value-}</dec></c>")
+
+    static IterableMap<string, string> DEC1 = EXTENDED.clone()
+        ..put("value", "<dec>{value}</dec>")
+        ..put("value+", "<dec 2>{value+}</dec>")
+        ..put("value-", "<c #7F7F7F><dec 2>{value-}</dec></c>")
+
+public class StringSeparator
+    static let NONE = ""
+    static let NORMAL = ", "
+    static let COMMA = ","
+    static let SPACE = " "
+    static let NEWLINE = "|n"
+    static let NEWLINE_INDENT = "|n    "
+    static let INDENT = "    "
+
+public class Tooltip
+    static let DEFAULT_BASIC_TEMPLATE    = TooltipTemplate.BASIC
+    static let DEFAULT_FRAGMENT_TEMPLATE = TooltipTemplate.NORMAL
+    static let DEFAULT_BASIC_STYLE       = TooltipStyle.BASIC
+    static let DEFAULT_EXTENDED_STYLE    = TooltipStyle.EXTENDED
+
+    protected var basicTemplate     = DEFAULT_BASIC_TEMPLATE
+    protected var basicStyle        = DEFAULT_BASIC_STYLE
+
+    protected var fragmentTemplate  = DEFAULT_FRAGMENT_TEMPLATE
+    protected var fragmentStyle     = DEFAULT_EXTENDED_STYLE
+
+    protected let basicFragment = new TooltipFragment(this)
+    protected let fragments     = new List<TooltipFragment>()
+
+    protected int levels = 1
+    protected int nextPriority = -1
+
+    function setLevels(int levels)
+        this.levels = levels
+
+    function setNextPriority(int priority)
+        this.nextPriority = priority
+
+    function getNextPriority() returns int
+        if this.nextPriority != -1
+            let retVal = nextPriority
+            nextPriority = -1
+            return retVal
+        else if fragments.getSize() > 0
+            return fragments.peek().priority
+        else
+            return 0
+
+    /** Returns the basic fragment for this tooltip. */
+    function getBasicFragment() returns TooltipFragment
+        return basicFragment
+
+    /** Sets the basic template that will be used to create basic tooltip. */
+    function setBasicTemplate(string template)
+        basicTemplate = template
+
+    /** Sets the default style for parts of the basic tooltip. */
+    function setBasicStyle(IterableMap<string, string> style)
+        basicStyle = style
+
+    /** Sets the fragment template to be used in case fragment does not have its own setting. */
+    function setFragmentTemplate(string template)
+        fragmentTemplate = template
+
+    /** Sets the default style for parts of the extended tooltip. */
+    function setFragmentStyle(IterableMap<string, string> style)
+        fragmentStyle = style
+
+    /** Returns the basic tooltip. */
+    function getBasicTip() returns string
+        return getBasicTip(1)
+
+    /** Returns the basic tooltip for a specificed level. */
+    function getBasicTip(int level) returns string
+        return basicFragment.getTooltip(level).trim().reduce()
+
+    /** Returns the extended tooltip. */
+    function getExtendedTip(int level) returns string
+        string tip = ""
+        this.sortFragments()
+        
+        for fragment in fragments
+            let actualLvl = level + fragment.levelModifier
+            if actualLvl > 0 and actualLvl <= levels
+                tip += fragment.getTooltip(actualLvl) + "|n"
+        return tip
+
+    /** Returns the extended tooltip. */
+    function getExtendedTip() returns string
+        return getExtendedTip(1)
+ 
+    function addBasicFragment()
+        basicFragment
+            ..setStyle(basicStyle)
+            ..setTemplate(basicTemplate)
+
+    construct()
+        addBasicFragment()
+
+    /** Adds a new fragment. */
+    function addFragment() returns TooltipFragment
+        let fragment = new TooltipFragment(this)
+            ..setTemplate(fragmentTemplate)
+            ..setStyle(fragmentStyle)
+            ..setPriority(getNextPriority() + 1)
+
+        fragments.add(fragment)
+        sortFragments()
+        return fragment
+
+    /** Adds a new fragment if the condition is met. */
+    function addFragment(bool conditionsMet) returns TooltipFragment
+        if compiletime and conditionsMet
+            return addFragment()
+        else
+            return new TooltipFragment(null)
+
+    /** Sorts the fragments by priority. */
+    function sortFragments()
+        fragments.sortBy((TooltipFragment obj1, TooltipFragment obj2) -> obj1.priority < obj2.priority)
+        
+    /** Removes a fragment from the fragment list. */
+    function removeFragment(TooltipFragment fragment)
+        fragments.remove(fragment)
+
+ 
+public class TooltipFragment
+    protected Tooltip parent
+
+    protected var priority = 0
+    protected let fields = new IterableMap<string, string>()
+    protected var levelModifier = 0
+
+    protected string template = Tooltip.DEFAULT_FRAGMENT_TEMPLATE
+    protected IterableMap<string, string> style = Tooltip.DEFAULT_EXTENDED_STYLE
+
+    /** Sets the level modifier to display data from other levels */
+    function setLevelModifier(int val)
+        levelModifier = val
+
+    /** Sets the basic template that will be used to create basic tooltip. */
+    function setTemplate(string template)
+        this.template = template
+
+    function getTemplate() returns string
+        return template
+
+    /** Sets the default style for parts of the basic tooltip. */
+    function setStyle(IterableMap<string, string> style)
+        this.style = style
+    
+    function getStyle() returns IterableMap<string, string>
+        return style
+
+    /* Field manipulation */
+
+    function applyStyle(string key, string value) returns string
+        if style.has(key)
+            var styleString = style.get(key)
+            if styleString == ""
+                styleString = "{" + key + "}"
+            return styleString .r(key, value)
+        else
+            return key
+
+    function setField(string key, string value)
+        fields.put(key, applyStyle(key, value))
+
+    /** Adds a level-independant list field to the map, formatting the string passed. */
+    function setListField(string key, List<string> values, string separator)
+        for i=0 to values.getSize() - 1
+            values.set(i, applyStyle(key, values.get(i)))
+        fields.put(key, values.joinBy(separator))
+        destroy values
+
+    function setListField(string key, List<string> values)
+        setListField(key, values, "{!para}")
+
+    /** Adds a level-dependant string-based field. */
+    function setLvlField(string key, List<string> values, string separator)
+        for lvl=1 to parent.levels 
+            let list = values.clone()
+            //print(list.get(lvl))
+            fields.put(key + lvl.toString(), list.get(lvl))
+            for sublvl=1 to parent.levels
+                if lvl == sublvl
+                    list.set(sublvl, applyStyle(key.rtrim("*") + "+", list.get(sublvl)))
+                else
+                    list.set(sublvl, applyStyle(key.rtrim("*") + "-", list.get(sublvl)))
+            list.dequeue()
+            fields.put(key + "*" + lvl.toString(), list.joinBy(separator))
+            
+            
+            destroy list
+
+    function setLvlField(string key, List<string> values)
+        setLvlField(key, values, "{!sep}")
+
+    /** Adds a level-dependant real-based field. */
+    function setLvlField(string key, RealLevelClosure rlc, string separator)
+        setLvlField(key, rlc.toStringList(parent.levels), separator)
+    
+    function setLvlField(string key, RealLevelClosure rlc)
+        setLvlField(key, rlc.toStringList(parent.levels), "{!sep}")
+
+    /** Adds a level-dependant int-based field. */ 
+    function setLvlField(string key, IntLevelClosure ilc, string separator)
+        setLvlField(key, ilc.toStringList(parent.levels), separator)
+    
+    function setLvlField(string key, IntLevelClosure ilc)
+        setLvlField(key, ilc.toStringList(parent.levels), "{!sep}")
+    
+    /** Adds a level-dependant string-based field. */ 
+    function setLvlField(string key, StringLevelClosure slc, string separator)
+        setLvlField(key, slc.toStringList(parent.levels), separator)
+
+    function setLvlField(string key, StringLevelClosure slc)
+        setLvlField(key, slc.toStringList(parent.levels), "{!sep}")
+
+    /* Preprocessing and processing */
+            
+    function processTemplate(int lvl) returns string
+        string suffix = ""
+        string processed = template
+
+        suffix = lvl.toString()
+
+        fields.put("lvl", suffix)
+        fields.put("lvls", parent.levels.toString())
+
+        if lvl > 0 and parent.levels > 1
+            setField("level", applyStyle("level", suffix))
+        else
+            processed = processed.r("level", "")
+            setField("level", "")
+        
+        var oldSize = 0
+        while true
+            let templateList = processed.getAllTemplateFields()
+            if templateList.getSize() == 0 or templateList.getSize() == oldSize
+                destroy templateList
+                break
+            oldSize = templateList.getSize()
+            for field in templateList 
+                if fields.has(field + suffix)
+                var fieldVal = fields.has(field + suffix) ? fields.get(field + suffix) : ""
+                if fieldVal == ""
+                    fieldVal = fields.has(field) ? fields.get(field) : "" 
+                if fieldVal == ""
+                    fieldVal = style.has(field) ? style.get(field) : ""
+                processed = processed.r(field, fieldVal)
+            destroy templateList
+
+        return processed
+
+    /** Returns the basic tooltip for a particular level. */
+    function getTooltip(int lvl) returns string
+        return processTemplate(lvl).process()
+    
+    /** Returns the basic tooltip. */
+    function getTooltip() returns string
+        return getTooltip(1)
+
+    /** Sets the priority of this fragment, fragments with a lower priority are displayed first. */
+    function setPriority(int priority)
+        this.priority = priority
+
+    construct(Tooltip parent)
+        this.parent = parent
+
+/* HELPER FUNCTIONS */
+
+public function TooltipFragment.setName(string val)
+    this.setField("name", val)
+
+public function TooltipFragment.setValue(string val)
+    this.setField("value", val)
+
+function RealLevelClosure.toStringList(int levels) returns List<string>
+    let list = new List<string>
+    list.add("PLACEHOLDER")
+    for lvl=1 to levels
+        list.add(this.run(lvl).toString())
+    return list
+
+function IntLevelClosure.toStringList(int levels) returns List<string>
+    let list = new List<string>
+    list.add("PLACEHOLDER")
+    for lvl=1 to levels
+        list.add(this.run(lvl).toString())
+    return list
+
+function StringLevelClosure.toStringList(int levels) returns List<string>
+    let list = new List<string>
+    list.add("PLACEHOLDER")
+    for lvl=1 to levels
+        list.add(this.run(lvl))
+    return list
+
+@Test function test()
+    if false 
+        print("                                       ")
+
+        let tip = new Tooltip()..setLevels(5) 
+        tip.getBasicFragment()
+            ..setField("hotkey", "Q")
+            ..setField("action", "Upgrade to")
+            ..setField("name", "This building")
+
+        tip.addFragment()
+            ..setField("name", "This")
+            ..setLvlField("value", (int lvl) -> lvl * 3)
+            ..setTemplate("{name} ({lvl}/{lvls}){!para}{value}")
+            ..setPriority(1)
+
+        tip.addFragment()
+            ..setLevelModifier(1)
+            ..setField("name", "Next")
+            ..setLvlField("value", (int lvl) -> lvl * 3)
+            ..setTemplate("{name} ({lvl}/{lvls}){!para}{value}")
+            ..setPriority(2)
+
+        for i=1 to tip.levels 
+            print("----------------------------------------")
+            //print(tip.getBasicTip(i))
+            nullTimer(() -> print(tip.getExtendedTip(i).replace("|n", "\n")))
+
+init
+    test()
+
+/** Returns all {template} fields found in the string */
+public function string.getAllTemplateFields() returns LinkedList<string>
+    let list = new LinkedList<string>
+    
+    var starts = new LinkedList<int>()
+    int endIndex
+
+    var index = 0
+    for char in this
+        if char == "{"
+            starts.add(index + 1)
+        if char == "}" and starts.getSize() > 0
+            endIndex = index
+            list.add((this.substring(starts.pop(), endIndex).trim()))
+
+        index++
+
+    destroy starts
+    return list

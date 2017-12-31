@@ -1,26 +1,15 @@
 package MapModule
-import TypeCasting
 import HashMap
 
+/** Attaches an object to this class */
 public module MapModule<Z>
-    protected static let zzz_map = new HashMap<Z, thistype>()
-    protected Z mapRef 
-    protected bool _hasRef = false
-
-    function hasRef() returns bool
-        return _hasRef
+    private static let _map = new HashMap<Z, thistype>()
 
     static function of(Z t) returns thistype
-        return zzz_map.get(t)
+        return _map.get(t)
 
-    function attachTo(Z t)
-        mapRef = t
-        zzz_map.put(t, this)
-        _hasRef = true
+    protected function attachTo(Z t)
+        _map.put(t, this)
 
-    function detachFromRef()
-        zzz_map.remove(mapRef)
-        _hasRef = false
-
-    ondestroy
-        detachFromRef()
+    protected function detachFrom(Z t)
+        _map.remove(t)

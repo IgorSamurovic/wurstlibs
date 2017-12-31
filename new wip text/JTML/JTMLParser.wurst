@@ -1,0 +1,207 @@
+package JTMLParser
+
+/*s
+
+class TokenType
+    string text
+    construct(string text)
+        this.text = text
+
+abstract class Processor
+    static TagRegistry registry
+    static string result = ""
+    static int c = 0
+    static string text
+    static string char = ""
+    static int maxId = 0
+    static int level = 0
+    static int textStart = 0
+    static Tag tag
+    static Tag startTag
+
+    static function can() returns bool
+        return c <= maxId
+
+    static function at(int pos) returns string
+        return text.charAt(pos)
+
+    static function at(int id1, int id2) returns string
+        return text.substring(id1, id2)
+
+    static function skipZeros()
+        while can()
+            char = text.charAt(c)
+            if char != " "
+                break
+            c++
+
+    static function findClosing(string name) returns bool
+        bool found = false
+        while can()
+            findFirst("<")
+            found = follows("/") and follows(tag.name) and follows(">")
+        return found
+
+    static function follows(string name) returns bool
+        skipZeros()
+        var does = false
+        if text.substring(c, c + name.length()) == name
+            does = true
+        c+= name.length()
+        return does
+
+    static function findNext() returns Tag
+        findFirst("<")
+        let start = c
+        findFirst(">")
+        let ending = c
+        return new Tag(registry, text.substring(start, ending))
+
+    static function findFirst(string match)
+        if match.length() == 1
+            while c <= maxId
+                char = at(c)
+                if match == char
+                    break
+                c++
+        else
+            let firstChar = match.charAt(0)
+            while c <= maxId
+                if firstChar == at(c) and match == at(c, c + match.length())
+                    c+= match.length()
+                    break
+                c++
+
+    static function forward()
+        c++
+        char = at(c)
+
+    static function process(TagRegistry registry, string text) returns string
+        Processor.text = text
+        Processor.registry = registry
+
+        tag = null
+        startTag = null
+        
+        result = ""
+        c = 0
+        level = 0
+        maxId = text.length() - 1
+        
+
+        var start = 0
+
+        while can()
+            // If it is an opening for a new tag
+            startTag = findNext()
+
+
+            findFirst("<")
+            start = c
+            findFirst(">")
+            tag = new Tag(registry, text.substring(start, c))
+            if tag.needsClose()
+                while level > 0
+                    findClosing(tag.name)
+                    if level > 0
+                        level--
+                    else
+                        // Do it <3
+            else
+                // do it
+        return result
+/*
+public function string.process(TagRegistry tagRegistry) returns string
+    Tag startTag = null
+    Tag endTag
+    Tag newTag
+
+    int endingBuffer = 0
+
+    int newRawStringStartIndex = 0
+    string processed = ""
+
+    for i = 0 to this.length() - 1
+        // Initializing variables for ease of use
+        var char = this.charAt(i)
+        var lastChar = i == 0 ? "" : this.charAt(i - 1)
+
+        // Checking if the character is perhaps escaped
+        if lastChar != "\\"
+            // Checking if the character is the start of a tag
+            if char == "<"
+                for j = i to this.length() - 1
+                    char = this.charAt(j)
+
+                    if char == ">" and this.charAt(j - 1) != "\\"
+                        newTag = new Tag()
+                        newTag.startIndex = i
+                        newTag.endIndex = j
+                        
+                        i = j
+
+                        newTag.process(tagRegistry, this.substring(newTag.startIndex + 1, newTag.endIndex))
+                        
+                        if newTag.ending
+                            if startTag != null
+                                endTag = newTag
+                                if startTag.name== endTag.name
+                                    if endingBuffer <= 0
+                                        let elem = new JTMLElement(
+                                            startTag.template,
+                                            startTag.attr,
+                                            this.substring(startTag.endIndex+1, endTag.startIndex))
+
+                                        processed += this.substring(newRawStringStartIndex, startTag.startIndex)
+                                        processed += elem.process(tagRegistry)
+                                        
+                                        newRawStringStartIndex = endTag.endIndex + 1
+
+                                        destroy elem
+                                        destroy startTag
+                                        destroy endTag
+
+                                        startTag = null
+                                    else
+                                        endingBuffer--
+                                        destroy newTag
+                                else
+                                    destroy newTag
+                            else
+                                destroy newTag
+                        else
+                            if startTag == null
+                                startTag = newTag
+                                if startTag.template.empty
+                                    let elem = new JTMLElement(startTag.template, null, "")
+                                    processed += this.substring(newRawStringStartIndex, startTag.startIndex)
+                                    processed += elem.process(tagRegistry)
+                                    destroy elem
+                                    newRawStringStartIndex = startTag.endIndex + 1
+                                    destroy startTag
+                                    startTag = null
+                            else
+                                if startTag.name == newTag.name
+                                    endingBuffer++
+                                
+                        i = j 
+                        break
+    
+    if startTag != null
+        let elem = new JTMLElement(startTag.template, startTag.attr, this.substring(startTag.endIndex + 1, this.length()))
+        processed += elem.process(tagRegistry)
+        newRawStringStartIndex = this.length()
+        destroy startTag
+        destroy elem
+
+    processed += this.substring(newRawStringStartIndex, this.length())
+    return processed
+
+public function string.process() returns string
+    return this.process(null)
+
+@test function test()
+    //print("Learn ThisSpell - [<c em>Q</c>] - [<c em>Level {lvl}</c>]".r("lvl", "3").process())
+
+init
+    nullTimer(()-> test())*/

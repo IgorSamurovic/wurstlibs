@@ -1,0 +1,12 @@
+package InitModule
+import ClosureTimers
+import TimerUtils
+
+public module InitModule
+	private static bool zz_initialized = zz_doInitialize()
+
+	private static function zz_doInitialize() returns bool
+		initialize()
+		return true
+
+	private static function initialize()

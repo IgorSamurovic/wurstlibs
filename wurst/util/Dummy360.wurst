@@ -3,10 +3,11 @@ import UnitObjEditing
 import IterableMap
 import HTMath
 import ClosureTimers
+import Execute
 
 public class Dummy360Recycler
     static constant DUMMY_ID = 'd360'
-    static constant CREATE_ON_START = 64
+    static constant CREATE_ON_START = 256
     static constant RELEASE_DELAY = 3.0
     static constant DUMMY_PLAYER = Player(14)
 
@@ -72,6 +73,12 @@ public class Dummy360
     function setPos(real x, real y)
         rec.u.setPos(x, y)
 
+    function setX(real x)
+        rec.u.setX(x)
+
+    function setY(real y)
+        rec.u.setY(y)
+
     function setZ(real z)
         rec.u.setFlyHeight(z, 0.)
 
@@ -101,14 +108,21 @@ public class Dummy360
         
         rec.release()
 
-init
-    for i = 1 to Dummy360Recycler.CREATE_ON_START
+function createNumDummies(int num)
+    for i = 1 to num
         new Dummy360Recycler()..release()
+init
+    var max = 64
+    var num = Dummy360Recycler.CREATE_ON_START
+    while num > 0
+        let toCreate = IMaxBJ(num, max)
+        execute(()-> createNumDummies(toCreate))
+        num -= toCreate
 
 // Compiletime block
 
 @compiletime function doCompiletimeStuff()
-    let u = new UnitDefinition(Dummy360Recycler.DUMMY_ID, 'ewsp')
+    new UnitDefinition(Dummy360Recycler.DUMMY_ID, 'ewsp')
     ..setName("Effect Dummy Unit")
     ..setMovementType(MovementType.Fly)
     ..setUpgradesUsed("")
@@ -131,10 +145,10 @@ init
     ..setProjectileImpactZ(0.0)
     ..setProjectileLaunchZ(0.0)
     ..setNameEditorSuffix("(360)")
-    ..setSightRadiusDay(64) 
-    ..setSightRadiusNight(64)
+    ..setSightRadiusDay(0) 
+    ..setSightRadiusNight(0)
     ..setUnitClassification("_")
     ..setPropulsionWindowdegrees(1.0)
     ..setTooltipBasic("")
-    ..setNormalAbilities("Avul,Arav,Aloc") //,Aloc 
+    ..setNormalAbilities("Avul,Arav,Aloc")
     ..setSelectionScale(-1)

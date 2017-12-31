@@ -1,0 +1,63 @@
+package Hotkey
+import LinkedListModule
+import AbilityObjEditing
+import ItemObjEditing
+
+public function AbilityDefinition.setHotkey(Hotkey hotkey)
+    this
+    ..setHotkeyNormal(hotkey.getChar())
+    ..setButtonPositionNormalX(hotkey.x)
+    ..setButtonPositionNormalY(hotkey.y)
+
+public function ItemDefinition.setHotkeyObject(Hotkey hotkey)
+    this
+    ..setHotkey(hotkey.getChar())
+    ..setButtonPositionX(hotkey.x)
+    ..setButtonPositionY(hotkey.y)
+
+public class Hotkey
+    use LinkedListModule
+    
+    static function ofChar(string char) returns thistype
+        for hotkey in Hotkey
+            if char == hotkey.char
+                return hotkey
+        return NONE
+
+    static let Q = new Hotkey("Q", 0, 0, "animatedead")
+    static let W = new Hotkey("W", 1, 0, "ancestralspirittarget")
+    static let E = new Hotkey("E", 2, 0, "ancestralspirit")
+    static let R = new Hotkey("R", 3, 0, "absorb")
+    static let A = new Hotkey("A", 0, 1, "auraunholy")
+    static let S = new Hotkey("S", 1, 1, "auravampiric")
+    static let D = new Hotkey("D", 2, 1, "avatar")
+    static let F = new Hotkey("F", 3, 1, "avengerform")
+    static let Z = new Hotkey("Z", 0, 2, "banish")
+    static let X = new Hotkey("X", 1, 2, "barkskin")
+    static let C = new Hotkey("C", 2, 2, "barkskinoff")
+    static let V = new Hotkey("V", 3, 2, "barkskinon")
+
+    static let NONE = new Hotkey("", 0, -11, "channel")
+
+    protected string char
+    protected int x
+    protected int y
+    protected string orderString
+
+    function getChar() returns string
+        return char
+
+    function getX() returns int
+        return x
+
+    function getY() returns int
+        return y
+
+    function getOrderstring() returns string
+        return orderString
+
+    construct(string char, int x, int y, string orderString)
+        this.char = char
+        this.x = x
+        this.y = y
+        this.orderString = orderString

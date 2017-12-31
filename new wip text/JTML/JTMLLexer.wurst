@@ -1,0 +1,338 @@
+package JTMLLexer
+import LinkedList
+import StringUtils
+
+/* Helper functions */
+
+function char.isWhitespace() returns bool
+    return this.c == ' ' or this.c == '\n' or this.c == '\t'
+
+function char.isNumber() returns bool
+    return this.c >= '0' and this.c <= '9'
+
+function char.isAlphabetical() returns bool
+    return this.c >= 'A' and this.c <= 'z'
+
+function char.isAlphanumberic() returns bool
+    return this.isNumber() or this.isAlphabetical() or this.c == '_'
+
+function char.isTokenChar() returns bool
+    return this.c == '<'
+        or this.c == '>'
+        or this.c == '='
+        or this.c == '''
+        or this.c == '/'
+        or this.c == '.'
+
+function string.asChar() returns char
+    return char(StringHash(this))
+
+function string.pad(int num) returns string
+    var len = this.length()
+    var str = ""
+    while len < num
+        str += " "
+        len++
+    return this + str
+
+enum State
+    Text
+    Tag
+    String
+    Number
+    Decimal
+    Identifier
+
+string array stateName = ["Text", "Tag", "String", "Number", "Decimal", "Identifier"]
+
+public function State.getName() returns string
+    return stateName[this castTo int]
+
+public abstract class TokenType
+    static let Open         = '<'
+    static let Close        = '>'
+    static let Assign       = '='
+    static let End          = '/'
+    static let Quotation    = '''
+    static let Point        = '.'
+    static let Text         = 'T'
+    static let Number       = 'N'
+    static let Decimal      = 'D'
+    static let String       = 'S'
+    static let Identifier   = 'I'
+    
+public class Token
+    protected int typ
+    protected string val
+
+    function getType() returns int
+        return typ
+
+    function getValue() returns string
+        return val
+
+    construct(int typ, string val)
+        this.typ = typ
+        this.val = val
+
+    construct(int typ)
+        this.typ = typ
+        this.val = ""
+
+abstract class Lexer
+    static constant DEBUG = true
+
+    /** Adds a new token to the token list */
+    static function add(int typ, string val)
+        tokens.add(new Token(typ, val))
+
+    /** Adds a new valueless token to the token list */
+    static function add(int typ)
+        tokens.add(new Token(typ))
+
+    /** Pushes a new state to the state stack */
+    static function pushState(State state)
+        states.push(state)
+        Lexer.state = state
+        start = c
+        tokenStarted = true
+
+    /** Pops the last state from the state stack */
+    static function popState()
+        states.pop()
+        Lexer.state = states.get(states.size() - 1)
+        tokenStarted = false
+
+    /** Orders the Lexer to process this character again */
+    static function processThisCharacterAgain()
+        c--
+
+    /** Queues the next character for processing */
+    static function nextChar()
+        c++
+
+    /* Variables */
+
+    /** A stack of all states */
+    static LinkedList<State> states = null
+
+    /** A list of all tokens */
+    static LinkedList<Token> tokens = null
+
+    /** Current Lexer state */
+    static State state
+
+    /** JTML code template that is being processed */
+    static string text
+
+    /** Current character index */
+    static int c
+
+    /** Start index of the current token */
+    static int start
+
+    /** Text length of the current text template */
+    static int textLength
+
+    /** String representation of the currently processed character */
+    static string str
+
+    /** Character representation of the currently processed character */
+    static char char
+
+    /** Whether a token has been started (but not finished) */
+    static bool tokenStarted = false
+
+    /* Debug functions */
+
+    /** Prints out an error with a message, as well as data */
+    static function error(string msg, int offset1, int offset2)
+        printSeparator()
+        var header = compiletime ?  "JTML:Lexer Error: " :
+            "|cffFFAA00JTML|r:Lexer |cffFF0000Error|r: "
+        
+        var body = compiletime ? 
+            "{0}{1}{2}" : 
+            "{0}|cffFF0000{1}|r{2}"
+        
+        var errorHand = compiletime ? "\n".pad(18 + offset1) + "^" : ""
+
+        print(header + msg + "\n    In template: " + body.format(
+            text.substring(0, offset1),
+            text.substring(offset1, offset2),
+            offset2 >= textLength ? "" : text.substring(offset2, textLength-1)) + errorHand)
+        printSeparator()
+    static function error(string msg)
+        error(msg, c, c + 1)
+
+    static function printStart()
+        printSeparator()
+        print("JTML:Lexer starts processing text:\n    " + text)
+        printStatesStart()
+
+    static function printSeparator()
+        print("--------------------------------------------------------------------------------------------------------------")
+
+    /** Prints out all tokens with their types an values, as well as a comparison between source text and result */
+    static function printTokens()
+        printSeparator()
+        print("TOKENS")
+        print("T VALUE")
+        printSeparator()
+        var result = ""
+        for token in tokens
+            let name = token.getType().toChar().toString()
+            var value = token.getValue() 
+            value = (value != "" ? value : name)
+            print(name + " " + value)
+            result += value + " "
+        printSeparator()
+        print("Text  : " + text)
+        print("Result: " + result)
+
+    static function printStatesStart()
+        printSeparator()
+        print("State      Progress")
+
+    /** Prints out the current state as well as the iteration progression */
+    static function printCurrentState()
+        print(state.getName().pad(10) + " " + text.substring(0, c + 1))
+
+    /* Processing */
+
+    /** Resets the Lexer to a default state */
+    static function reset()
+        c = -1
+        if tokens != null
+            destroy tokens
+        tokens = new LinkedList<Token>
+        if states != null
+            destroy states
+        states = new LinkedList<State>
+        pushState(State.Text)
+        tokenStarted = false
+        start = 0
+
+    /** Returns whether the string still has characters for the Lexer to process */
+    static function hasNext() returns bool
+        nextChar()
+        let charsLeft = textLength - c
+
+        if charsLeft > 0
+            // Ordinary character
+            str = text.charAt(c)
+            char = str.asChar()
+        else
+            // Terminator character
+            str  = " "
+            char = str.asChar()
+            
+        return charsLeft >= 0
+
+    /** Processes the input string into a list of JTML tokens */
+    static function process(string inputText) returns LinkedList<Token>
+        text = inputText
+        textLength = text.length()
+        
+        reset()
+
+        if DEBUG
+            printStart()
+
+        while hasNext()
+
+            switch state
+                case Text
+                    if state == State.Text
+                        if char.c == TokenType.Open
+                            if start != c // Don't add an empty text token
+                                add(TokenType.Text, text.substring(start, c))
+                            add(TokenType.Open)
+                            pushState(State.Tag) 
+
+                case Tag
+                    if char.isWhitespace()
+                        skip
+                    else if char.c == '>'
+                        add(char.c)
+                        start = c + 1
+                        popState()
+                    else if char.c == '/'
+                    else if char.c == '='
+                        add(char.c)
+                    else if char.c == '''
+                        pushState(State.String)
+                        start += 1 // offset by one because of quotation marks
+                    else if char.isNumber()
+                        pushState(State.Number)
+                    else if char.c == TokenType.Point
+                        pushState(State.Decimal)
+                    else if char.isAlphabetical()
+                        pushState(State.Identifier)
+                    else
+                        error("Invalid character '{0}'!".format(str))
+                        //break
+
+                case String
+                    while hasNext()
+                        if char.c == '''
+                            popState()
+                            add(TokenType.String, text.substring(start, c))
+                            break
+
+                case Number
+                    if char.isNumber()
+                        skip
+                    else if char.c == TokenType.Point
+                        pushState(State.Decimal)
+                    else if char.isAlphabetical() or char.c == TokenType.Assign or char.c == TokenType.Quotation
+                        error("Expected numerical.")
+                        break
+                    else
+                        popState()
+                        add(TokenType.Number, text.substring(start, c))
+                        processThisCharacterAgain()
+
+                case Decimal
+                    if char.isNumber()
+                        skip
+                    else if char.c == TokenType.Point
+                        error("Found '.', expected numerical.")
+                        break
+                    else if char.isAlphabetical()
+                        error("Found alphabetical, expected numerical.")
+                        break
+                    else
+                        popState()
+                        if state == State.Number
+                            popState()
+                        add(TokenType.Decimal, text.substring(start, c))
+                        processThisCharacterAgain()
+
+                case Identifier
+                    if char.isAlphanumberic()
+                        skip
+                    else 
+                        popState()
+                        add(TokenType.Identifier, text.substring(start, c))
+                        processThisCharacterAgain()
+
+            if DEBUG
+                printCurrentState()
+
+        if tokenStarted and state==State.String
+            error("The last string is not closed!", start-1, textLength)
+
+        if state==State.Text
+            add(TokenType.Text, text.substring(start, textLength))
+            if DEBUG
+                printCurrentState()
+        
+        if DEBUG
+            Lexer.printTokens()
+        return tokens
+
+@test function test()
+    let str = "This is some normal text!?< hax attr='sumString8'><lul> txt</someOther val=5!> <br>     dgg jun "
+    Lexer.process(str)
+   
