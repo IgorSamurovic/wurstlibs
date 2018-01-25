@@ -1,6 +1,6 @@
 package ColorSet
+import HashMap
 import JTML
-import IterableMap
 import StringUtils
 
 constant DELIMITER = ":" 

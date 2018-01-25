@@ -1,10 +1,65 @@
 package ObjectIdFactory
-import ObjectIdGenerator
+import Preloader
+import ErrorHandling
 
-public constant UNIT_GEN = new IdGenerator('uZ00')
-public constant HERO_GEN = new IdGenerator('UX00')
-public constant ABIL_GEN = new IdGenerator('AZ00')
-public constant BUFF_GEN = new IdGenerator('BZ00')
-public constant ITEM_GEN = new IdGenerator('IZ00')
-public constant DEST_GEN = new IdGenerator('MZ00')
+public constant UNIT_GEN = new ObjectIdFactory('uZ00')
+public constant HERO_GEN = new ObjectIdFactory('UX00')
+public constant ABIL_GEN = new ObjectIdFactory('AZ00')
+public constant BUFF_GEN = new ObjectIdFactory('BZ00')
+public constant ITEM_GEN = new ObjectIdFactory('IZ00')
+public constant DEST_GEN = new ObjectIdFactory('MZ00')
 
+class ObjectIdFactory
+    private int i1
+    private int i2
+    private int i3
+    private int i4
+    
+    private int lastId = 0
+
+    construct(int start)
+        i1 = start mod 256
+        i2 = (start mod 65536) div 256
+        i3 = (start mod 16777216) div 65536
+        i4 = start div 16777216
+
+    function isInvalid(int char) returns boolean
+        return (char < 48 or (char > 57 and char < 97))
+        
+    function last() returns int
+        return lastId
+
+    function resserve()
+
+    function next() returns int
+        if i1 < '~'
+            i1++
+            while isInvalid(i1)
+                i1++
+        else if i2 < '~'
+            i1 = '!'
+            i2++
+            while isInvalid(i2)
+                i2++
+        else if i3 < '~'
+            i1 = '!'
+            i2 = '!'
+            i3++
+            while isInvalid(i3)
+                i3++
+        else if i4 < '~'
+            i1 = '!'
+            i2 = '!'
+            i3 = '!'
+            i4++
+            while isInvalid(i4)
+                i4++
+        else
+            error("No vaild id left")
+            return 0
+        let id = i1 + (i2 * 256) + (i3 * 65536) + (i4 * 16777216)
+        if not compiletime
+            preloadAbility(id)
+        lastId = id
+        return id
+        

@@ -10,19 +10,29 @@ public module PlayerInstance
     static function getLocalInstance() returns thistype
         return localInstance
 
-    private player owningPlayer = null
+    private player owningPlayer
+    private int owningPlayerId
 
     function getOwningPlayer() returns player
         return owningPlayer
+
+    function getId() returns int
+        return owningPlayerId
 
     /** Returns the instance associated with a player.
         Returns null if it has not been initialized. */
     static function of(player p) returns thistype
         return zzz_player_inst[p.getId()]
 
+    /** Returns the instance associated with a playerid.
+        Returns null if it has not been initialized. */
+    static function of(int playerId) returns thistype
+        return zzz_player_inst[playerId]
+
     /** Attaches this instance to a player. */
     function attachTo(player p)
-        zzz_player_inst[p.getId()] = this
+        owningPlayerId = p.getId()
+        zzz_player_inst[owningPlayerId] = this
         this.owningPlayer = p
         if p == GetLocalPlayer()
             localInstance = this
@@ -47,10 +57,3 @@ public module PlayerInstance
         return true
 
     static constant zzz_initUnitInstance = zzz_PlayerInstanceInit()
-
-public class PlayerInstanceExample
-    use PlayerInstance
-
-    override static function initPlayerInstance(player p)
-        if p.getId() <= 11
-            new PlayerInstanceExample()..attachTo(p)

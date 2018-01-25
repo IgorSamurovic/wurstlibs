@@ -1,5 +1,5 @@
 package JTML
-import IterableMap
+import HashMap
 import LinkedList
 import StringUtils 
 import ClosureTimers
@@ -83,10 +83,12 @@ public class JTMLElement
 
     /** Returns the value of an attribute at a specific position. */
     function getAttr(int index) returns string
-        if index < attr.getKeys().getSize()
+        /*if index < attr.getKeys().getSize()
             return attr.getKeys().get(index)
         else
-            return ""
+			return ""*/ 
+		return ""
+		// THIS DOES NOT WORK NOW
 
     /** Returns the value of an attribute with a specific name. */
     function getAttr(string name) returns string

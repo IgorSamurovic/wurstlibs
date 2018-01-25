@@ -1,6 +1,6 @@
 package Dummy360
 import UnitObjEditing
-import IterableMap
+import HashMap
 import HTMath
 import ClosureTimers
 import Execute
@@ -8,6 +8,7 @@ import Execute
 public class Dummy360Recycler
     static constant DUMMY_ID = 'd360'
     static constant CREATE_ON_START = 256
+    static constant CREATE_ON_NEED = 16
     static constant RELEASE_DELAY = 3.0
     static constant DUMMY_PLAYER = Player(14)
 
@@ -20,10 +21,9 @@ public class Dummy360Recycler
     /* API */
 
     static function get() returns thistype
-        if stackcount > 0
-            return getFromStack()
-        else
-            return new Dummy360Recycler()
+        if stackcount <= 0
+            createNumDummies(CREATE_ON_NEED)
+        return getFromStack()
 
     function release()
         for path in effects
@@ -110,7 +110,8 @@ public class Dummy360
 
 function createNumDummies(int num)
     for i = 1 to num
-        new Dummy360Recycler()..release()
+        Dummy360Recycler.addToStack(new Dummy360Recycler())
+        
 init
     var max = 64
     var num = Dummy360Recycler.CREATE_ON_START
@@ -151,4 +152,3 @@ init
     ..setPropulsionWindowdegrees(1.0)
     ..setTooltipBasic("")
     ..setNormalAbilities("Avul,Arav,Aloc")
-    ..setSelectionScale(-1)

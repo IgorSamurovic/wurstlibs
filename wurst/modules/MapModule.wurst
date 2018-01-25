@@ -5,11 +5,11 @@ import HashMap
 public module MapModule<Z>
     private static let _map = new HashMap<Z, thistype>()
 
-    static function of(Z t) returns thistype
+    override static function of(Z t) returns thistype
         return _map.get(t)
 
-    protected function attachTo(Z t)
+    override protected function attachTo(Z t)
         _map.put(t, this)
 
-    protected function detachFrom(Z t)
+    override protected function detachFrom(Z t)
         _map.remove(t)

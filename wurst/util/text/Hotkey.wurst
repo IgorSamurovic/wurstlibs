@@ -3,11 +3,21 @@ import LinkedListModule
 import AbilityObjEditing
 import ItemObjEditing
 
+public function UnitOrBuildingOrHeroDefinition.setHotkeyObject(Hotkey hotkey)
+    this
+    ..setHotkey(hotkey.getChar())
+    ..setButtonPositionX(hotkey.x)
+    ..setButtonPositionY(hotkey.y)
+
 public function AbilityDefinition.setHotkey(Hotkey hotkey)
     this
     ..setHotkeyNormal(hotkey.getChar())
     ..setButtonPositionNormalX(hotkey.x)
     ..setButtonPositionNormalY(hotkey.y)
+    ..setButtonPositionResearchX(hotkey.x)
+    ..setButtonPositionResearchY(hotkey.y)
+    ..setButtonPositionTurnOffX(hotkey.x)
+    ..setButtonPositionTurnOffY(hotkey.y)
 
 public function ItemDefinition.setHotkeyObject(Hotkey hotkey)
     this
