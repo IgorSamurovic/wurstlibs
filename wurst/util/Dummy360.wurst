@@ -5,7 +5,7 @@ import HTMath
 import ClosureTimers
 import Execute
 
-public class Dummy360Recycler
+class Dummy360Recycler
     static constant DUMMY_ID = 'd360'
     static constant CREATE_ON_START = 256
     static constant CREATE_ON_NEED = 16
@@ -15,7 +15,7 @@ public class Dummy360Recycler
     protected unit u = CreateUnit(DUMMY_PLAYER, DUMMY_ID, 0, 0, 0)..setPathing(false)
     protected let effects = new IterableMap<string, effect>()
 
-    construct()
+	construct()
         SetUnitBlendTime(u, 0)
 
     /* API */
